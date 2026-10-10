@@ -4,7 +4,10 @@ See what passed between your coding agents in [herdr](https://herdr.dev), and wh
 
 > **Status: pre-alpha, not released. macOS only for now; Linux comes later.** The plan is in [docs/plan.md](docs/plan.md).
 
-![The graph view: a Codex agent and a Claude Code agent with the assignments, results and messages between them, and the evidence for one delivery.](docs/media/graph.png)
+![Four agents in one herdr session. An orchestrator (Claude Code) sends an implementer and a docs writer (Codex) and a verifier (Claude Code) their assignments at once; the graph puts the orchestrator above the three, and their results come back as lines. The timeline at the end shows the three working side by side.](docs/media/team.gif)
+
+*A real run, sped up while the agents work: the herdr-trace view above, the four agents' terminals below.
+The films were recorded in a herdr session made for them, with the agents' approvals skipped.*
 
 When agents from different tools (Codex, Claude Code) work together in one herdr session, herdr shows each
 pane, but not the conversation between them. herdr-trace draws it: who asked whom for what, whether the
@@ -16,8 +19,13 @@ it never types into an agent and never answers an approval.
 
 ## What you see
 
+![A Codex lead asks a Claude Code reviewer for a review through herdr-trace. The assignment and the result appear as they are sent, with the evidence for the delivery; then the lead card's link opens the lead's pane in herdr web ui, where the reviewer's message sits in the lead's conversation.](docs/media/review.gif)
+
+*One review round between a Codex lead and a Claude Code reviewer, then a card's link into herdr web ui.*
+
 - **Agents as cards**, one per tool session, with herdr's state (working, idle, awaiting a response) and
-  the turn each one is on. A working agent's card moves; one waiting on an approval stands out.
+  the turn each one is on. A working agent's card moves; one waiting on an approval stands out. When one
+  agent hands work to several, it sits a row above them.
 - **Lines between them** for assignments, results and messages, each with its delivery state:
   delivered, delivered with the text changed, queued, sent while the recipient was busy, not confirmed,
   or not delivered.
@@ -29,6 +37,8 @@ it never types into an agent and never answers an approval.
 - **Links into [herdr web ui](https://github.com/devswha/herdr-web-ui)**: give its address, and each card
   opens that agent's pane there.
 - English or Korean; each viewer picks.
+
+![The graph view: a Codex agent and a Claude Code agent with the assignments, results and messages between them, and the evidence for one delivery.](docs/media/graph.png)
 
 ![The timeline view: turns as bars on real time, with the deliveries between the agents.](docs/media/timeline.png)
 
