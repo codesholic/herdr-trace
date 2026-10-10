@@ -310,3 +310,20 @@ herdr-trace serve ◀── 저널 + 받는 쪽 기록 파일(~/.codex, ~/.claud
   - Codex의 첫 `herdr-trace send`는 herdr 환경변수가 지워져 실패한다. 규칙대로 `--from`을 붙여 다시 보냈고, 보낸 쪽은 `CODEX_THREAD_ID`로 확인됐다.
   - verifier의 첫 턴은 "테스트를 써 두고 implementer를 기다린다"로 끝났다. 이 턴은 맡긴 일이 없어서 그 답이 중간 응답이 아니라 도출 결과로 그려졌다. 명시 결과가 온 뒤에는 "명시 결과 있음"으로 흐려진다. 동료의 메시지를 기다리는 턴을 중간 응답으로 볼지는 열린 질문이다.
 
+### 5단계: 공개 알파 (2026-10-11, 완료)
+
+- **Python 3.11 확인:** 작업 폴더에 받은 Python 3.11.13에서 테스트 88개가 통과했다.
+- **커밋 작성자:** 회사 주소였던 작성자를 공개 전에 GitHub noreply 주소(`codesholic <20995881+codesholic@users.noreply.github.com>`)로 바꿨다(사용자 결정). 날짜와 파일 내용은 그대로다.
+- **공개:**
+  - https://github.com/codesholic/herdr-trace (public)
+  - main과 태그 `v0.1.0`을 올렸다. README 상태는 "alpha (0.1.0)"이다.
+- **GitHub에서 설치 확인:**
+  - pipx: 격리된 pipx로 `pipx install git+https://github.com/codesholic/herdr-trace`를 실행했다.
+    - 0.1.0이 깔리고 화면 파일과 규칙 파일이 들어갔다.
+    - 설치본 데모는 토큰 없이 401, 토큰을 주면 화면과 데이터를 돌려줬다.
+  - herdr 플러그인: 격리된 herdr(별도 HOME·설정 폴더, `trace-test` 세션)에서 `herdr plugin install codesholic/herdr-trace --yes`를 실행했다.
+    - 터미널이 아닌 곳에서는 `--yes`가 필요하다.
+    - herdr를 다시 띄우자 시작 훅이 화면을 띄웠고, 플러그인 로그에는 주소만 있고 토큰은 없었다.
+    - 상태, 열기, 멈춤 액션이 성공했다.
+- **시험 중 확인한 것:** 플러그인 프로세스는 herdr 서버의 환경을 받는다. 그래서 CLI 쪽에 준 `BROWSER`로는 열기 액션의 브라우저를 바꿀 수 없다. 이 시험에서도 기본 브라우저에 탭이 열렸다.
+
