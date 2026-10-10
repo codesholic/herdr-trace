@@ -33,3 +33,16 @@ id = "herdr-trace-stop"
 title = "Stop herdr-trace"
 contexts = ["workspace"]
 command = ["sh", "scripts/herdr-plugin.sh", "stop"]
+
+# Agents send through the herdr-trace command; this puts it on PATH (~/.local/bin) when the user asks.
+[[actions]]
+id = "herdr-trace-install-command"
+title = "Install the herdr-trace command for agents"
+contexts = ["workspace"]
+command = ["sh", "scripts/herdr-plugin.sh", "install-command"]
+
+[[actions]]
+id = "herdr-trace-remove-command"
+title = "Remove the herdr-trace command"
+contexts = ["workspace"]
+command = ["sh", "scripts/herdr-plugin.sh", "remove-command"]

@@ -74,6 +74,46 @@ class PluginCommandChecks(unittest.TestCase):
         self.assertEqual(values["HERDR_TRACE_LANG"], "en")
 
 
+class CommandShimChecks(unittest.TestCase):
+    """The action that puts herdr-trace on PATH writes only its own small script and removes only that."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(dir="/tmp")
+        self.addCleanup(self.temp.cleanup)
+        self.bin = Path(self.temp.name) / "bin"
+        self.env = {**environment(self.temp.name), "HERDR_TRACE_BIN_DIR": str(self.bin), "PATH": f"{self.bin}:/usr/bin:/bin"}
+
+    def run_plugin(self, action):
+        return subprocess.run(["sh", str(ROOT / "scripts/herdr-plugin.sh"), action], env=self.env, capture_output=True,
+                              text=True, timeout=60)
+
+    def test_installed_command_runs_herdr_trace_and_is_removed(self):
+        installed = self.run_plugin("install-command")
+        self.assertEqual(installed.returncode, 0, installed.stderr)
+        self.assertEqual(installed.stdout.strip(), f"herdr-trace command installed at {self.bin / 'herdr-trace'}")
+        ran = subprocess.run(["herdr-trace", "--version"], env=self.env, capture_output=True, text=True, timeout=30)
+        self.assertEqual((ran.returncode, ran.stdout.split()[0]), (0, "herdr-trace"), ran.stderr)
+        self.assertEqual(self.run_plugin("install-command").returncode, 0)  # Its own file is rewritten.
+        removed = self.run_plugin("remove-command")
+        self.assertEqual(removed.stdout.strip(), f"herdr-trace command removed from {self.bin / 'herdr-trace'}")
+        self.assertFalse((self.bin / "herdr-trace").exists())
+
+    def test_a_file_it_did_not_write_is_left_alone(self):
+        self.bin.mkdir()
+        (self.bin / "herdr-trace").write_text("#!/bin/sh\necho mine\n", encoding="utf-8")
+        for action in ("install-command", "remove-command"):
+            with self.subTest(action=action):
+                refused = self.run_plugin(action)
+                self.assertEqual(refused.returncode, 1)
+                self.assertIn("not written by herdr-trace", refused.stderr)
+        self.assertEqual((self.bin / "herdr-trace").read_text(encoding="utf-8"), "#!/bin/sh\necho mine\n")
+
+    def test_a_folder_off_path_is_named(self):
+        installed = subprocess.run(["sh", str(ROOT / "scripts/herdr-plugin.sh"), "install-command"],
+                                   env={**self.env, "PATH": "/usr/bin:/bin"}, capture_output=True, text=True, timeout=60)
+        self.assertIn("is not on PATH", installed.stdout)
+
+
 class EntryScriptChecks(unittest.TestCase):
     def test_check_names_the_python_it_will_use(self):
         checked = subprocess.run(["sh", str(ROOT / "scripts/herdr-plugin.sh"), "check"], capture_output=True, text=True,

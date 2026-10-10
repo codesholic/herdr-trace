@@ -9,6 +9,17 @@ together inside one herdr session: who asked whom for what, whether the message 
 conversation, and which reply answered it. Each line in the view carries its evidence: the exact text the
 sender's bridge journaled, and the record in the recipient's own transcript.
 
+## Install
+
+macOS, Python 3.11 or later.
+
+```sh
+pipx install git+https://github.com/codesholic/herdr-trace   # once the repository is public
+pipx install /path/to/herdr-trace                             # from a local checkout
+```
+
+Or run it as a herdr plugin (below); its `herdr-trace-install-command` action puts the command on PATH.
+
 ## Try it on invented data
 
 ```sh
@@ -42,12 +53,15 @@ while a view already runs for the session. It needs Python 3.11 or later.
 | `herdr-trace-open` | Opens the view in a browser, starting it first if needed |
 | `herdr-trace-status` | Says whether the view runs for this session, and where |
 | `herdr-trace-stop` | Stops the view for this session |
+| `herdr-trace-install-command` | Writes `~/.local/bin/herdr-trace`, which runs this plugin's checkout, so agents can send |
+| `herdr-trace-remove-command` | Removes that file again; a file the plugin did not write is left alone |
 
 Settings go in `env` inside the plugin's config folder (`herdr plugin config-dir codesholic.herdr-trace`):
 `HERDR_TRACE_AUTO_OPEN=1` opens the view when herdr starts, `HERDR_TRACE_LANG=ko` starts it in Korean.
 herdr's plugin log shows the view's address, never its token.
 
-Agents send through the `herdr-trace` command, so it must be on their PATH as well.
+Agents send through the `herdr-trace` command, so it must be on their PATH: install it with pipx or run
+`herdr-trace-install-command` once. `herdr-trace rules` prints what to put in an agent's AGENTS.md.
 
 ## Privacy
 

@@ -48,8 +48,9 @@ def main(argv=None):
     demo.add_argument("--dir", type=Path, help="Folder for the invented data (default: a temporary folder)")
     demo.add_argument("--lang", choices=("en", "ko"), default="en", help="Language the page starts in")
 
-    plugin = commands.add_parser("plugin", help="What the herdr plugin runs: start, stop, status or open the view")
-    plugin.add_argument("action", choices=("start", "stop", "status", "open"))
+    plugin = commands.add_parser("plugin", help="What the herdr plugin runs: start, stop, status or open the view, "
+                                 "and install or remove the herdr-trace command")
+    plugin.add_argument("action", choices=("start", "stop", "status", "open", "install-command", "remove-command"))
 
     args = parser.parse_args(argv)
     try:

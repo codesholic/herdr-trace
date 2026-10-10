@@ -113,4 +113,44 @@ def open_view(environ=os.environ, out=sys.stdout, browse=webbrowser.open):
     return found
 
 
-COMMANDS = {"start": start, "stop": stop, "status": status, "open": open_view}
+SHIM_MARK = "# Installed by the herdr-trace plugin."
+
+
+def command_path(environ=os.environ):
+    folder = environ.get("HERDR_TRACE_BIN_DIR") or str(Path.home() / ".local/bin")
+    return Path(folder).expanduser() / "herdr-trace"
+
+
+def install_command(environ=os.environ, out=sys.stdout):
+    """Put a `herdr-trace` command on PATH for agents, pointing at this plugin's checkout.
+
+    Run only when the user invokes the action. An existing file that this plugin did not write is left alone.
+    """
+    root = Path(environ.get("HERDR_PLUGIN_ROOT") or Path(__file__).resolve().parents[2])
+    target = command_path(environ)
+    if target.exists() and SHIM_MARK not in target.read_text(encoding="utf-8", errors="replace"):
+        raise ValueError(f"{target} exists and was not written by herdr-trace; remove it or set HERDR_TRACE_BIN_DIR")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(f"#!/bin/sh\n{SHIM_MARK}\nexec \"{root / 'scripts/herdr-trace'}\" \"$@\"\n", encoding="utf-8")
+    target.chmod(0o755)
+    print(f"herdr-trace command installed at {target}", file=out)
+    folders = [Path(entry).expanduser() for entry in environ.get("PATH", "").split(os.pathsep) if entry]
+    if target.parent not in folders:
+        print(f"{target.parent} is not on PATH; add it so agents can run herdr-trace", file=out)
+    return target
+
+
+def remove_command(environ=os.environ, out=sys.stdout):
+    target = command_path(environ)
+    if not target.exists():
+        print(f"no herdr-trace command at {target}", file=out)
+        return None
+    if SHIM_MARK not in target.read_text(encoding="utf-8", errors="replace"):
+        raise ValueError(f"{target} was not written by herdr-trace; it is left alone")
+    target.unlink()
+    print(f"herdr-trace command removed from {target}", file=out)
+    return target
+
+
+COMMANDS = {"start": start, "stop": stop, "status": status, "open": open_view,
+            "install-command": install_command, "remove-command": remove_command}
