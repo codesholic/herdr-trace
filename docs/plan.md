@@ -210,3 +210,44 @@ herdr-trace serve ◀── 저널 + 받는 쪽 기록 파일(~/.codex, ~/.claud
   - 카드, 선, 패널, 시간 순 행을 모두 열어 봤다. 영어 화면에 데이터에 없는 한국어가 없고, 두 언어 모두 번역 키가 새지 않았다.
   - 언어 전환, 새로 고침 뒤 유지, 서버 기본값과 사용자 선택의 우선순위를 확인했다. 브라우저 오류는 없다.
   - 검사 중에 결함 하나를 찾아 고쳤다. 언어를 바꾸면 설정을 다시 읽으면서 서버 기본값으로 되돌아가던 문제다.
+
+### 3단계: herdr 플러그인 (2026-10-10, 완료)
+
+**만든 것**
+- 저장소 루트에 `herdr-plugin.toml`을 뒀다(ID `codesholic.herdr-trace`). 저장소를 받으면 코드까지 같이 있으므로, 플러그인은 `src/`를 그대로 실행한다.
+  - 빌드: Python 3.11 이상이 있는지 확인한다.
+  - 시작 훅: `herdr-trace plugin start`.
+  - 액션: `herdr-trace-open`, `herdr-trace-status`, `herdr-trace-stop`.
+- `scripts/herdr-plugin.sh`: herdr의 환경에서 Python을 찾는다(PATH, Homebrew, 시스템 순서, `HERDR_TRACE_PYTHON`으로 지정 가능).
+- `src/herdr_trace/plugin.py`:
+  - `start`는 서버를 세션별로 떼어 내 띄우고, 이미 떠 있으면 아무것도 하지 않는다.
+  - herdr가 넘겨주는 `HERDR_SESSION`과 `HERDR_SOCKET_PATH`로 세션과 소켓을 정한다. 상태 폴더는 `send`와 같은 곳이라 같은 저널을 쓴다.
+  - 플러그인 출력(herdr 로그에 남는다)에는 주소만 쓰고 토큰은 쓰지 않는다. 토큰은 브라우저에만 넘기고, 서버 로그(`server.log`, 권한 0600)에 남는다.
+  - 설정은 환경변수나 플러그인 설정 폴더의 `env` 파일로 준다. `HERDR_TRACE_AUTO_OPEN=1`(시작할 때 브라우저 열기, 기본 끔), `HERDR_TRACE_LANG=ko`.
+
+**확인: 격리된 herdr 0.9.3**
+- `XDG_CONFIG_HOME` 등을 임시 폴더로 바꾸고 빈 환경으로 화면 없는 서버(`herdr --session trace-test server`)를 띄웠다.
+  - herdr는 `XDG_CONFIG_HOME`을 따랐다. 소켓, 플러그인 등록부, 플러그인 상태가 모두 임시 폴더에 생겼다.
+  - 사용자 herdr(`~/.config/herdr`)와 `dag-lab` 세션에는 등록하거나 다시 시작하지 않았다.
+- `herdr plugin link`로 연결했다.
+  - 연결만으로는 시작 훅이 돌지 않았다. 시험용 서버를 다시 시작하자 시작 훅이 성공했다(0.3초).
+  - 시작 훅은 세션 `trace-test`와 그 소켓을 받아 herdr-trace를 띄웠고, 실제 herdr에 연결해 이벤트를 구독했다.
+- 액션(`plugin action invoke`)으로 다음을 확인했다.
+  - 상태: 서비스 중을 보고했다.
+  - 열기: 토큰 주소는 브라우저 대신 쓴 기록용 스크립트에만 갔다.
+  - 끄기: 프로세스가 사라졌다.
+  - 끈 뒤 열기: 서버를 새로 띄우고 열었다.
+- herdr 플러그인 로그에 토큰이 한 번도 나오지 않았다.
+- 시험을 마치고 시험용 herdr와 임시 폴더를 지웠다.
+  - 사용자 herdr 설정을 시작 전 기록과 대조했다. `dag-lab` 자신의 기록(세션 상태 저장, 그 시각에 붙었다 떨어진 herdr 클라이언트 로그)만 바뀌었다.
+  - 시험 흔적(`trace-test`, `/tmp/htx`)은 없었다.
+
+**herdr 0.9.3에서 알게 된 것**
+- 액션 실행은 비동기다. 결과는 플러그인 로그로 본다(`herdr plugin log list`).
+- `plugin action invoke --plugin <ID>`는 어떤 형식으로도 동작하지 않았다(`plugin_action_not_found`). 액션은 ID만으로 실행된다.
+  - web ui도 `status`, `stop`을 갖고 있어서 이름이 겹친다. 그래서 액션 ID를 `herdr-trace-…`로 지었다.
+- `plugin link`는 빌드 단계를 돌리지 않았다. GitHub 설치(`plugin install`)에서 도는지는 저장소 공개 전이라 확인하지 못했다.
+
+**남은 것**
+- 에이전트가 보내려면 `herdr-trace` 명령이 PATH에 있어야 한다. 플러그인만으로는 생기지 않는다. 설치 안내(pipx 등)나 명령을 만들어 주는 액션은 4·5단계에서 정한다.
+- 세션이 여러 개면 세션마다 서버가 하나씩, 빈 포트로 뜬다(9장 질문의 답).

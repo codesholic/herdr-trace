@@ -27,6 +27,28 @@ PYTHONPATH=src python3 -m herdr_trace demo --open
 The page is in English or Korean. `--lang` sets the language it starts in; each viewer can switch with the
 button in the top bar, and the page remembers that choice.
 
+## As a herdr plugin
+
+```sh
+herdr plugin link /path/to/herdr-trace      # a local checkout
+herdr plugin install codesholic/herdr-trace  # once the repository is public
+```
+
+Whenever herdr starts a session, the plugin serves that session's view in the background; it does nothing
+while a view already runs for the session. It needs Python 3.11 or later.
+
+| Action | What it does |
+| --- | --- |
+| `herdr-trace-open` | Opens the view in a browser, starting it first if needed |
+| `herdr-trace-status` | Says whether the view runs for this session, and where |
+| `herdr-trace-stop` | Stops the view for this session |
+
+Settings go in `env` inside the plugin's config folder (`herdr plugin config-dir codesholic.herdr-trace`):
+`HERDR_TRACE_AUTO_OPEN=1` opens the view when herdr starts, `HERDR_TRACE_LANG=ko` starts it in Korean.
+herdr's plugin log shows the view's address, never its token.
+
+Agents send through the `herdr-trace` command, so it must be on their PATH as well.
+
 ## Privacy
 
 - Everything stays on your machine. The server listens on 127.0.0.1 only and needs the token it prints.

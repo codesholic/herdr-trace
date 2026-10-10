@@ -48,9 +48,13 @@ def main(argv=None):
     demo.add_argument("--dir", type=Path, help="Folder for the invented data (default: a temporary folder)")
     demo.add_argument("--lang", choices=("en", "ko"), default="en", help="Language the page starts in")
 
+    plugin = commands.add_parser("plugin", help="What the herdr plugin runs: start, stop, status or open the view")
+    plugin.add_argument("action", choices=("start", "stop", "status", "open"))
+
     args = parser.parse_args(argv)
     try:
-        return {"serve": run_serve, "send": run_send, "rules": run_rules, "demo": run_demo}[args.command](args)
+        return {"serve": run_serve, "send": run_send, "rules": run_rules, "demo": run_demo,
+                "plugin": run_plugin}[args.command](args)
     except (ValueError, OSError, bridge.HerdrError) as exc:
         parser.exit(1, f"herdr-trace: error: {exc}\n")
 
@@ -84,6 +88,12 @@ def run_send(args):
 def run_rules(args):
     text = (Path(__file__).with_name("rules.md")).read_text(encoding="utf-8")
     print(text.replace("{session}", paths.session_name(args.session)), end="")
+    return 0
+
+
+def run_plugin(args):
+    from . import plugin
+    plugin.COMMANDS[args.action]()
     return 0
 
 

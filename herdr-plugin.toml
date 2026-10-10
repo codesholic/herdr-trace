@@ -1,0 +1,34 @@
+id = "codesholic.herdr-trace"
+name = "herdr-trace"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "See what passed between your coding agents in herdr, and whether it arrived: a local, read-only view"
+platforms = ["linux", "macos"]
+
+# Python 3.11 or later must be there before herdr-trace can start.
+[[build]]
+command = ["sh", "scripts/herdr-plugin.sh", "check"]
+
+# Once per herdr start: serve this session's view unless a server already answers for it.
+[[startup]]
+command = ["sh", "scripts/herdr-plugin.sh", "start"]
+
+# Action IDs carry the plugin name: other plugins have their own "status" and "stop", and herdr 0.9.3
+# invokes an action by its ID alone.
+[[actions]]
+id = "herdr-trace-open"
+title = "Open herdr-trace"
+contexts = ["workspace"]
+command = ["sh", "scripts/herdr-plugin.sh", "open"]
+
+[[actions]]
+id = "herdr-trace-status"
+title = "herdr-trace status"
+contexts = ["workspace"]
+command = ["sh", "scripts/herdr-plugin.sh", "status"]
+
+[[actions]]
+id = "herdr-trace-stop"
+title = "Stop herdr-trace"
+contexts = ["workspace"]
+command = ["sh", "scripts/herdr-plugin.sh", "stop"]
