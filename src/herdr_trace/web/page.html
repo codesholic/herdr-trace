@@ -256,7 +256,7 @@ const CATEGORY = {assignment: {label: "kind_assignment", color: "var(--rel-assig
                   message: {label: "kind_message", color: "var(--rel-message)", marker: "message"},
                   derived: {label: "cat_derived", color: "var(--rel-result)", marker: "result"},
                   delegation: {label: "cat_delegation", color: "var(--rel-delegation)", marker: "delegation"}};
-const W = 278, H = 158, SW = 230, SH = 104, GAP_X = 300;
+const W = 278, H = 158, SW = 230, SH = 104, GAP_X = 300, ROLE_GAP_X = 160, ROLE_GAP_Y = 190;
 const ROW = 66, TOP = 18;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const SVG_TAGS = new Set(["svg", "g", "line", "path", "text", "rect", "circle", "defs", "marker", "animateMotion", "title"]);
@@ -474,18 +474,40 @@ function perRow() {  // Narrow or tall graphs stack cards so the fitted view sta
   const width = $("graph").clientWidth || 1200, height = $("graph").clientHeight || 0;
   return width < 700 || height > width ? 1 : width < 1100 ? 2 : 4;
 }
+const chunks = (list, size) => Array.from({length: Math.ceil(list.length / size)}, (_, i) => list.slice(i * size, (i + 1) * size));
+function assignmentRows(m) {  // Whoever assigns work sits a row above whoever it assigned.
+  // Only when the work fans out: a chain (lead -> reviewer) reads better side by side, so it keeps the grid (null).
+  const assigns = new Map(m.cards.map((c) => [c.key, []]));
+  for (const g of m.groups) if (g.category === "assignment" && g.from !== g.to && assigns.has(g.from) && assigns.has(g.to)) assigns.get(g.from).push(g.to);
+  const assigners = [...assigns.keys()].filter((key) => assigns.get(key).length);
+  if (!assigners.length) return null;
+  const assigned = new Set([...assigns.values()].flat()), level = new Map();
+  let frontier = assigners.filter((key) => !assigned.has(key));
+  if (!frontier.length) frontier = assigners.slice(0, 1);  // Everyone was assigned by someone: start from the first.
+  frontier.forEach((key) => level.set(key, 0));
+  while (frontier.length) {
+    const next = [];
+    for (const key of frontier) for (const to of assigns.get(key)) if (!level.has(to)) { level.set(to, level.get(key) + 1); next.push(to); }
+    frontier = next;
+  }
+  const rest = Math.max(...level.values()) + 1, rows = [];  // Cards outside the assignments take the last row.
+  for (const card of m.cards) (rows[level.has(card.key) ? level.get(card.key) : rest] ||= []).push(card);
+  return rows.some((row) => row.length > 1) ? rows.filter(Boolean) : null;
+}
 function layout(m) {
-  const pos = new Map(), columns = perRow();
+  const pos = new Map(), columns = perRow(), byRole = assignmentRows(m);
   const subsOf = (key) => m.subs.filter((s) => s.parent === key);
+  // Rows by role are centred under the widest, closer side by side and further apart, since their lines run between rows.
+  const rows = byRole ? byRole.flatMap((row) => chunks(row, Math.max(3, columns))) : chunks(m.cards, columns);
+  const step = W + (byRole ? ROLE_GAP_X : GAP_X), widest = Math.max(0, ...rows.map((row) => row.length));
   let y = 0;
-  for (let start = 0; start < m.cards.length; start += columns) {
-    const row = m.cards.slice(start, start + columns);
-    const tallest = Math.max(0, ...row.map((c) => subsOf(c.key).length));
+  for (const row of rows) {
+    const tallest = Math.max(0, ...row.map((c) => subsOf(c.key).length)), indent = byRole ? (widest - row.length) * step / 2 : 0;
     row.forEach((card, i) => {
-      pos.set(card.key, {x: i * (W + GAP_X), y});
-      subsOf(card.key).forEach((sub, j) => pos.set(sub.key, {x: i * (W + GAP_X) + 24, y: y + H + 70 + j * (SH + 22)}));
+      pos.set(card.key, {x: indent + i * step, y});
+      subsOf(card.key).forEach((sub, j) => pos.set(sub.key, {x: indent + i * step + 24, y: y + H + 70 + j * (SH + 22)}));
     });
-    y += H + 150 + (tallest ? 70 + tallest * (SH + 22) : 0);
+    y += H + (byRole ? ROLE_GAP_Y : 150) + (tallest ? 70 + tallest * (SH + 22) : 0);
   }
   for (const [key, manual] of positions) if (pos.has(key)) pos.set(key, manual);  // The viewer's own arrangement wins.
   return pos;
@@ -602,16 +624,20 @@ function groupStyle(group) {
 }
 function geometry(group, pos, lane, lanes) {
   const a = {...pos.get(group.from), ...size(group.from)}, b = {...pos.get(group.to), ...size(group.to)};
-  const offset = (lane - (lanes - 1) / 2) * 30;
-  const vertical = group.category === "delegation" || Math.abs((a.x + a.w / 2) - (b.x + b.w / 2)) < Math.min(a.w, b.w);
-  if (vertical) {
+  const offset = (lane - (lanes - 1) / 2) * 30, ax = a.x + a.w / 2, bx = b.x + b.w / 2;
+  const stacked = b.y >= a.y + a.h || a.y >= b.y + b.h;  // One card is wholly above the other: run between their edges.
+  if (group.category === "delegation" || stacked || Math.abs(ax - bx) < Math.min(a.w, b.w)) {
     const down = b.y >= a.y;
-    const x1 = a.x + a.w / 2 + offset, x2 = b.x + b.w / 2 + offset, y1 = down ? a.y + a.h : a.y, y2 = down ? b.y : b.y + b.h;
+    const x1 = ax + offset, x2 = bx + offset, y1 = down ? a.y + a.h : a.y, y2 = down ? b.y : b.y + b.h;
     const dy = Math.max(40, Math.abs(y2 - y1) * .45) * (down ? 1 : -1);
-    // Labels of stacked lanes sit in one column right of the outermost lane, staggered so they do not overlap.
-    const right = Math.max(a.x + a.w / 2, b.x + b.w / 2) + ((lanes - 1) / 2) * 30 + 12;
+    // Labels of a pair's lanes sit in one column beside the outermost lane, staggered so they do not overlap, just
+    // above the lower card, so lines fanning out of one card do not cross each other's labels. They go on the side
+    // the lines do not come from.
+    const at = down ? .85 : .15, curve = (p0, p1, p2, p3) => (1 - at) ** 3 * p0 + 3 * (1 - at) ** 2 * at * p1 + 3 * (1 - at) * at ** 2 * p2 + at ** 3 * p3;
+    const left = (down ? ax - bx : bx - ax) > 1, beside = ((lanes - 1) / 2) * 30 + 12;
     return {d: `M${x1} ${y1} C${x1} ${y1 + dy} ${x2} ${y2 - dy} ${x2} ${y2}`,
-            mid: {x: right, y: (y1 + y2) / 2 + (lane - (lanes - 1) / 2) * 16 + 4}, anchor: "start"};
+            mid: {x: curve(ax, ax, bx, bx) + (left ? -beside : beside),
+                  y: curve(y1, y1 + dy, y2 - dy, y2) + (lane - (lanes - 1) / 2) * 16 + 4}, anchor: left ? "end" : "start"};
   }
   const forward = b.x >= a.x;
   const x1 = forward ? a.x + a.w : a.x, x2 = forward ? b.x : b.x + b.w;
