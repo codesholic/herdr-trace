@@ -70,6 +70,7 @@
     .node.outside{border-style:dashed;border-left-style:solid;background:var(--surface-2);box-shadow:none}
     .node.sub{width:230px;height:104px;padding:10px 13px}
     .node-head{display:flex;align-items:center;gap:7px;min-width:0;margin-bottom:6px}
+    .node-meta{display:flex;align-items:center;gap:7px;min-width:0;margin:-2px 0 7px}
     .node-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--tone);color:var(--tone)}
     .node[data-status="working"] .node-dot,.node[data-status="running"] .node-dot{animation:pulse 2s ease-out infinite}
     .node-tool{flex:none;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:6px;border:1px solid currentColor}
@@ -539,9 +540,9 @@ function nodeContent(card) {
     : turn.status === "open" ? el("div", {class: "node-time", text: t("turn_open_in_record", {time: when(turn.started_at)})})
     : el("div", {class: "node-time", text: t("turn_ended", {time: when(turn.finished_at || turn.started_at), count: turn.count})});
   return {status, tone: TONE[status] || TONE.unknown, outside: !agent.live, parts: [
-    el("div", {class: "node-head"}, el("span", {class: "node-dot"}),
-      el("span", {class: "node-tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
-      el("span", {class: "node-title", text: agent.name || t("no_name")}),
+    // The name has a line of its own so a long name and a long state do not crowd each other out.
+    el("div", {class: "node-head"}, el("span", {class: "node-dot"}), el("span", {class: "node-title", text: agent.name || t("no_name")})),
+    el("div", {class: "node-meta"}, el("span", {class: "node-tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
       el("span", {class: "node-state", text: agent.live ? agentState(agent.status) : t("outside")})),
     el("div", {class: "node-role", text: turn.title ? `${turn.status === "open" ? t("now_prefix") : t("last_prefix")}: ${titleText(turn.title)}` : t("no_turn_record")}),
     timeLine,
