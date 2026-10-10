@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>herdr-trace</title>
+  <style>
+    :root{color-scheme:light dark;
+      --font-ui:"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Segoe UI",system-ui,sans-serif;
+      --font-display:"Avenir Next","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+      --font-num:ui-rounded,"SF Pro Rounded","Avenir Next","Segoe UI",sans-serif;
+      --mono:ui-monospace,"SF Mono","SFMono-Regular",Menlo,Consolas,monospace;
+      --bg:#f1eee7;--surface:#fbfaf6;--surface-2:#f4f1ea;--surface-3:#e9e4da;--canvas:#f7f5ef;--canvas-dot:#d8d1c3;
+      --line:#e2dccf;--line-strong:#cbc3b3;--text:#1b2220;--text-2:#46504c;--muted:#6c7672;--faint:#9aa29e;
+      --accent:#0d7a69;--accent-soft:#d8ece6;
+      --st-running:#2565d6;--st-done:#16835a;--st-failed:#cf3a3a;--st-attention:#b06a0c;--st-unknown:#8a918d;
+      --rel-assignment:#a56806;--rel-result:#16835a;--rel-message:#2565d6;--rel-delegation:#0d7a93;
+      --codex:#1b2220;--claude:#c15f3c;--warn-bg:#fcf1db;--warn-line:#ecd096;--warn-text:#734703;
+      --shadow:0 1px 2px #1b22200d,0 6px 20px #1b22200d;--shadow-lift:0 2px 4px #1b222019,0 16px 36px #1b22201f;--radius:16px}
+    @media (prefers-color-scheme:dark){:root{
+      --bg:#0b0f11;--surface:#12191c;--surface-2:#171f23;--surface-3:#1f292e;--canvas:#0e1416;--canvas-dot:#233035;
+      --line:#222b30;--line-strong:#33414a;--text:#e7edeb;--text-2:#b8c3c0;--muted:#8b9894;--faint:#5e6a67;
+      --accent:#45c7ab;--accent-soft:#15342f;
+      --st-running:#63a9ff;--st-done:#47cf8e;--st-failed:#ff7070;--st-attention:#f0b44c;--st-unknown:#7c8a87;
+      --rel-assignment:#e7c057;--rel-result:#4fd39b;--rel-message:#70b0ff;--rel-delegation:#51c7dd;
+      --codex:#e7edeb;--claude:#e8916f;--warn-bg:#2a2313;--warn-line:#5b4a20;--warn-text:#f1cf86;
+      --shadow:0 1px 2px #0007,0 8px 26px #0005;--shadow-lift:0 2px 6px #0009,0 18px 44px #0007}}
+    *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+    body{font:14px/1.55 var(--font-ui);color:var(--text);background:var(--bg);padding:16px;-webkit-font-smoothing:antialiased}
+    button{font:inherit;color:inherit}
+    .shell{max-width:1500px;margin:0 auto;display:grid;gap:14px}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px}
+    .topbar h1{margin:0;font:600 17px var(--font-display);flex:1;min-width:200px}
+    .pill{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:600;
+      color:var(--muted);background:var(--surface-2);white-space:nowrap}
+    .pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+    .pill[data-tone="good"]{color:var(--st-done);background:color-mix(in srgb,var(--st-done) 12%,transparent)}
+    .pill[data-tone="warn"]{color:var(--st-attention);background:color-mix(in srgb,var(--st-attention) 13%,transparent)}
+    .pill[data-tone="bad"]{color:var(--st-failed);background:color-mix(in srgb,var(--st-failed) 12%,transparent)}
+    .pill[data-tone="busy"]{color:var(--st-running);background:color-mix(in srgb,var(--st-running) 12%,transparent)}
+    .meta{font-size:12px;color:var(--muted)}
+    .banner{padding:10px 14px;border:1px solid var(--warn-line);border-radius:12px;background:var(--warn-bg);color:var(--warn-text);font-size:13px}
+    .flow{overflow:visible}
+    .flow-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+    .tabs{display:inline-flex;padding:3px;border-radius:11px;background:var(--surface-2);gap:2px}
+    .tabs button{height:30px;padding:0 14px;border:0;border-radius:8px;background:none;font-weight:600;font-size:13px;color:var(--text-2);cursor:pointer}
+    .tabs button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+    .stats{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}.stats b{color:var(--text);font:700 13px var(--font-num)}
+    .stats .warn b{color:var(--st-attention)}.stats .bad b{color:var(--st-failed)}.stats .busy b{color:var(--st-running)}
+    .legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-left:auto;font-size:12px;color:var(--text-2)}
+    .legend span{display:inline-flex;align-items:center;gap:6px}.legend svg{width:26px;height:8px}
+    .toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--text-2)}
+    /* Graph: the canvas language of Codex DAG, where this view comes from (dots, pan, zoom, cards, flowing lines). */
+    .graph-section{position:relative;display:flex;min-width:0;height:min(70vh,640px);background:var(--canvas);overflow:hidden;border-radius:0 0 15px 15px}
+    .graph{flex:1;min-width:0;position:relative;overflow:hidden;touch-action:none;cursor:grab;
+      background-image:radial-gradient(var(--canvas-dot) 1px,transparent 1.3px);background-size:22px 22px}
+    .graph.dragging,.graph.dragging *{cursor:grabbing}.graph,.graph *{-webkit-user-select:none;user-select:none}
+    .world{position:absolute;left:0;top:0;transform-origin:0 0}
+    .wires{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+    .node{position:absolute;display:flex;flex-direction:column;width:278px;height:158px;padding:13px 15px 12px;text-align:left;
+      border:1px solid var(--line);border-left:4px solid var(--tone);border-radius:13px;background:var(--surface);box-shadow:var(--shadow);
+      overflow:hidden;cursor:pointer;transition:box-shadow .18s,border-color .18s;outline:none}
+    .node:hover{box-shadow:var(--shadow-lift);border-color:var(--line-strong);border-left-color:var(--tone)}
+    .node.selected,.node:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px}
+    .node.outside{border-style:dashed;border-left-style:solid;background:var(--surface-2);box-shadow:none}
+    .node.sub{width:230px;height:104px;padding:10px 13px}
+    .node-head{display:flex;align-items:center;gap:7px;min-width:0;margin-bottom:6px}
+    .node-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--tone);color:var(--tone)}
+    .node[data-status="working"] .node-dot,.node[data-status="running"] .node-dot{animation:pulse 2s ease-out infinite}
+    .node-tool{flex:none;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:6px;border:1px solid currentColor}
+    .node-tool[data-provider="codex"]{color:var(--codex)}.node-tool[data-provider="claude"]{color:var(--claude)}.node-tool[data-provider="sub"]{color:var(--rel-delegation)}
+    .node-title{font-size:15px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);min-width:0}
+    .node-state{margin-left:auto;flex:none;padding:1px 8px;border-radius:99px;font-size:11.5px;font-weight:700;color:var(--tone);background:color-mix(in srgb,var(--tone) 13%,transparent)}
+    .node-role{font-size:12.5px;font-weight:600;line-height:1.45;color:var(--text-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .node-time{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .node-foot{margin-top:auto;font-size:11px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .node.sub .node-title{font-size:13.5px}.node.sub .node-role{font-size:12px;-webkit-line-clamp:1}
+    /* Working: a sweep along the lower edge and a breathing ring, so activity reads without reading the label. */
+    .node[data-status="working"],.node[data-status="running"],.agent[data-status="working"]{animation:working-ring 2.4s ease-in-out var(--ring-delay,0s) infinite}
+    .node[data-status="working"]::before,.node[data-status="running"]::before,.agent[data-status="working"]::before{content:"";position:absolute;left:0;right:0;
+      bottom:0;height:4px;background:color-mix(in srgb,var(--st-running) 14%,transparent);pointer-events:none}
+    .node[data-status="working"]::after,.node[data-status="running"]::after,.agent[data-status="working"]::after{content:"";position:absolute;left:0;bottom:0;
+      width:42%;height:4px;border-radius:4px;pointer-events:none;
+      background:linear-gradient(90deg,transparent,var(--st-running) 30%,var(--st-running) 70%,transparent);
+      box-shadow:0 0 10px color-mix(in srgb,var(--st-running) 55%,transparent);animation:sweep 1.8s cubic-bezier(.45,0,.55,1) var(--sweep-delay,0s) infinite}
+    .node[data-status="blocked"]{box-shadow:0 0 0 3px color-mix(in srgb,var(--st-attention) 32%,transparent),var(--shadow)}
+    .node[data-status="blocked"] .node-dot{animation:pulse 2s ease-out infinite}
+    /* herdr web ui links sit on the card's lower edge as siblings, so the card stays one button and a link stays a link. */
+    .node-link{position:absolute;z-index:1;transform:translate(-100%,-50%);display:inline-flex;align-items:center;height:24px;padding:0 10px;
+      border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);box-shadow:var(--shadow);font-size:11.5px;font-weight:700;
+      color:var(--text-2);text-decoration:none;white-space:nowrap}
+    .node-link:hover{border-color:var(--accent);color:var(--accent)}
+    .node-link:focus-visible,.web-link:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+    .node-link.attention,.web-link.attention{border-color:var(--st-attention);background:var(--warn-bg);color:var(--warn-text)}
+    .web-link{justify-self:start;display:inline-flex;align-items:center;height:32px;padding:0 13px;border:1px solid var(--line-strong);border-radius:10px;
+      background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--text);text-decoration:none;white-space:nowrap}
+    .web-link:hover{border-color:var(--accent);color:var(--accent)}
+    .web-link.compact{height:24px;padding:0 9px;margin-left:8px;font:700 11.5px var(--font-ui)}.rows>div:has(.web-link){display:block}
+    .grel{cursor:pointer;outline:none;pointer-events:visiblePainted}
+    .grel .hit{fill:none;stroke:transparent;stroke-width:18;pointer-events:stroke}
+    .gedge{fill:none;stroke-width:2;stroke-linecap:round;opacity:.85;pointer-events:none}
+    .gedge.running{stroke-dasharray:6 8;animation:flow 1.8s linear infinite;opacity:1}
+    .gedge.flash{animation:flash 1.6s ease-out}
+    .grel.secondary{opacity:.42}.grel.secondary:hover,.grel.secondary.selected,.grel.secondary:focus-visible{opacity:1}
+    .grel.selected .gedge,.grel:hover .gedge,.grel:focus-visible .gedge{stroke-width:3.4;opacity:1}
+    .glabel{font:700 11.5px var(--font-ui);paint-order:stroke;stroke:var(--canvas);stroke-width:5px;stroke-linejoin:round;pointer-events:all}
+    .grel.selected .glabel{font-weight:800}
+    .graph-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;pointer-events:none}
+    .canvas-controls{position:absolute;right:14px;bottom:14px;z-index:2;display:flex;align-items:center;border:1px solid var(--line);
+      border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+    .canvas-controls button{display:flex;align-items:center;justify-content:center;gap:6px;min-width:36px;height:36px;padding:0 9px;border:0;
+      background:none;font-size:13px;font-weight:700;color:var(--text-2);cursor:pointer}
+    .canvas-controls button:hover{background:var(--surface-2);color:var(--text)}
+    .canvas-controls svg{width:16px;height:16px}.zoom-label{min-width:46px;text-align:center;font:700 12px var(--font-num);color:var(--muted)}
+    .control-divider{width:1px;height:20px;background:var(--line)}
+    .inspector{width:392px;flex:none;border-left:1px solid var(--line);background:var(--surface);overflow:auto;padding:16px 18px 22px;
+      display:grid;align-content:start;gap:12px;scrollbar-width:thin}
+    .inspector h2{margin:0;font:600 18px/1.35 var(--font-display);overflow-wrap:anywhere}
+    .inspector .sub-title{font-size:12.5px;color:var(--muted);margin-top:-6px}
+    .feed{display:grid;gap:2px}.feed button{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding:7px 8px;border:0;border-radius:9px;
+      background:none;text-align:left;cursor:pointer}.feed button:hover{background:var(--surface-2)}
+    .feed time{font:12px var(--mono);color:var(--muted);padding-top:1px}.feed strong{font-size:12.5px;font-weight:600}
+    .feed span{grid-column:2;font-size:12px;color:var(--muted)}
+    .section-title{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;margin-top:4px}
+    /* Time-order view (the earlier sequence diagram). */
+    .sequence-body{padding:14px 16px 8px;display:grid;gap:12px}
+    .agents{display:grid;gap:12px;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr))}
+    .agent{position:relative;overflow:hidden;padding:14px 16px;display:grid;gap:6px;min-width:0}
+    .agent-head{display:flex;align-items:center;gap:8px;min-width:0}
+    .agent-name{font:600 16px var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tool{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid currentColor;white-space:nowrap}
+    .tool[data-provider="codex"]{color:var(--codex)}.tool[data-provider="claude"]{color:var(--claude)}
+    .agent .pill{margin-left:auto}
+    .agent dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:baseline;gap:2px 10px;font-size:12px}
+    .agent dt{color:var(--muted)}.agent dd{margin:0;font-family:var(--mono);font-size:11.5px;overflow-wrap:anywhere}
+    svg.diagram{display:block;width:100%;overflow:visible}
+    .lanes{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr));gap:12px;padding:8px 0;
+      background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+    .lane{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;font-size:13px;font-weight:600}
+    .lane-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lane .pill{height:24px;padding:0 9px;font-size:11.5px}
+    .bar{stroke-width:1.2}
+    .bar.done{fill:color-mix(in srgb,var(--st-done) 22%,transparent);stroke:color-mix(in srgb,var(--st-done) 60%,transparent)}
+    .bar.running{fill:color-mix(in srgb,var(--st-running) 32%,transparent);stroke:var(--st-running);animation:breathe 2s ease-in-out infinite}
+    .bar.open,.bar.interrupted{fill:transparent;stroke:var(--st-unknown);stroke-dasharray:4 3}
+    .bar.failed{fill:color-mix(in srgb,var(--st-failed) 18%,transparent);stroke:var(--st-failed)}
+    .bar.system{opacity:.55}
+    .gap-mark line{stroke:var(--line-strong);stroke-dasharray:2 6}.gap-mark text{font:11.5px var(--font-ui);fill:var(--muted)}
+    .now line{stroke:var(--accent);stroke-width:1.5}.now text{font:700 11.5px var(--font-num);fill:var(--accent)}
+    .follow{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;height:38px;padding:0 18px;border:0;border-radius:999px;
+      background:var(--accent);color:#fff;font-weight:700;box-shadow:var(--shadow-lift);cursor:pointer}
+    .lifeline{stroke:var(--line-strong);stroke-dasharray:3 5}
+    .edge{cursor:pointer;outline:none}
+    .edge .hit{stroke:transparent;stroke-width:22}
+    .edge .shaft{stroke-width:2;fill:none}
+    .edge text{font:12.5px var(--font-ui);fill:var(--text-2)}
+    .edge .when{font-size:11px;fill:var(--muted)}
+    .edge:hover .shaft,.edge:focus-visible .shaft{stroke-width:3}
+    .edge[aria-pressed="true"] .band{fill:var(--accent-soft)}
+    .edge .band{fill:transparent}
+    .edge.secondary{opacity:.45}.edge.secondary:hover,.edge.secondary:focus-visible,.edge.secondary[aria-pressed="true"]{opacity:1}
+    .empty{padding:24px 16px;color:var(--muted);font-size:13px}
+    .detail{padding:16px 18px;display:grid;gap:12px}
+    .detail h2{margin:0;font:600 15px var(--font-display)}
+    .facts{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13px}
+    .facts dt{color:var(--muted)}.facts dd{margin:0;overflow-wrap:anywhere}
+    pre{margin:0;padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);font:12.5px/1.6 var(--mono);
+      white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;-webkit-user-select:text;user-select:text}
+    details{border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+    details>summary{cursor:pointer;padding:9px 13px;font-size:13px;font-weight:600}
+    details>div{padding:0 13px 12px;display:grid;gap:8px}
+    .mono{font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+    .rows{display:grid;gap:6px;font-size:12.5px}.rows>div{display:grid;gap:2px}
+    .settings form{display:grid;gap:10px}
+    .settings label{display:grid;gap:4px;font-size:12.5px;color:var(--muted)}
+    .settings input{height:36px;padding:0 11px;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);font:12.5px var(--mono);color:var(--text);min-width:0}
+    .settings input:disabled{opacity:.6}
+    .settings button{justify-self:start;height:36px;padding:0 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+    .settings .status{font-size:12.5px;color:var(--text-2)}
+    @keyframes flow{to{stroke-dashoffset:-28}}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 50%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+    @keyframes flash{0%{stroke-width:8;opacity:1}100%{stroke-width:2;opacity:.85}}
+    @keyframes breathe{50%{opacity:.55}}
+    @keyframes working-ring{0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--st-running) 22%,transparent),var(--shadow)}
+      50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--st-running) 16%,transparent),0 8px 26px color-mix(in srgb,var(--st-running) 22%,transparent)}}
+    @keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(240%)}}
+    @media (prefers-reduced-motion:reduce){.gedge.running,.gedge.flash,.node-dot,.bar.running{animation:none!important}
+      .node[data-status="working"],.node[data-status="running"],.agent[data-status="working"]{animation:none;
+        box-shadow:0 0 0 2px color-mix(in srgb,var(--st-running) 30%,transparent),var(--shadow)}
+      .node[data-status="working"]::after,.node[data-status="running"]::after,.agent[data-status="working"]::after{animation:none;width:100%;
+        transform:none;background:var(--st-running);opacity:.6}}
+    @media (max-width:900px){.graph-section{flex-direction:column;height:auto}.graph{height:440px;flex:none}
+      .inspector{width:auto;border-left:0;border-top:1px solid var(--line)}.legend{margin-left:0}}
+    @media (max-width:720px){body{padding:10px}.agents{grid-template-columns:minmax(0,1fr)}.control-text{display:none}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="card topbar">
+    <h1>herdr-trace <span class="meta" id="session-name"></span></h1>
+    <span class="pill" id="connection" data-tone="warn"><i></i><span>연결 중</span></span>
+    <span class="pill" id="herdr"><i></i><span>herdr</span></span>
+    <span class="meta" id="updated"></span>
+  </header>
+  <div id="errors" hidden></div>
+  <section class="card flow" aria-label="전달 흐름">
+    <div class="flow-head">
+      <div class="tabs" role="tablist" aria-label="보기">
+        <button type="button" role="tab" id="tab-graph" aria-controls="graph-view">그래프</button>
+        <button type="button" role="tab" id="tab-sequence" aria-controls="sequence-view">시간 순</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="legend"><label class="toggle" id="live-only-label"><input type="checkbox" id="live-only"> herdr에 있는 에이전트만<span class="meta" id="hidden-note"></span></label>
+        <label class="toggle"><input type="checkbox" id="show-derived" checked> 도출 결과 보기</label><span id="legend" class="legend"></span></div>
+    </div>
+    <div class="graph-section" id="graph-view" role="tabpanel" aria-labelledby="tab-graph">
+      <div class="graph" id="graph" aria-label="협업 그래프">
+        <div class="world" id="world"><svg class="wires" id="wires" aria-hidden="false"></svg></div>
+        <div class="graph-empty" id="graph-empty" hidden>아직 관찰한 에이전트가 없다. 저널 기록이나 herdr 연결을 기다린다.</div>
+        <div class="canvas-controls" aria-label="그래프 보기 조절">
+          <button type="button" id="zoom-out" aria-label="축소" title="축소">−</button>
+          <span class="zoom-label" id="zoom-label">100%</span>
+          <button type="button" id="zoom-in" aria-label="확대" title="확대">+</button>
+          <span class="control-divider" aria-hidden="true"></span>
+          <button type="button" id="fit" aria-label="전체 그래프 맞춤" title="전체 그래프 맞춤"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4"/></svg><span class="control-text">전체 보기</span></button>
+        </div>
+      </div>
+      <aside class="inspector" id="inspector" aria-label="선택한 항목 상세" aria-live="polite"></aside>
+    </div>
+    <div id="sequence-view" role="tabpanel" aria-labelledby="tab-sequence" hidden>
+      <div class="sequence-body">
+        <section class="agents" id="agents" aria-label="에이전트"></section>
+        <div class="lanes" id="lanes" aria-hidden="true"></div>
+        <div id="diagram"></div>
+      </div>
+    </div>
+  </section>
+  <section class="card detail" id="detail" aria-live="polite" hidden></section>
+  <section class="card detail" id="extras"></section>
+  <section class="card detail settings" id="settings"></section>
+</div>
+<button type="button" class="follow" id="follow" hidden>새 전달 ↓</button>
+<script>
+"use strict";
+const KIND = {assignment: "작업 요청", message: "메시지", result: "결과"};
+const AGENT_TONE = {idle: "good", done: "good", working: "busy", blocked: "warn", unknown: ""};
+const VERIFY = {pane_env: "pane 환경변수", agent_session_env: "도구 세션 ID", process_ancestry: "프로세스 계보", declared: "자기 신고(미검증)"};
+const PENDING = new Set(["unconfirmed", "queued", "pending_busy"]);
+const TONE = {working: "var(--st-running)", running: "var(--st-running)", blocked: "var(--st-attention)", idle: "var(--st-done)",
+              done: "var(--st-done)", completed: "var(--st-done)", unknown: "var(--st-unknown)", outside: "var(--st-unknown)"};
+const CATEGORY = {assignment: {label: "작업 요청", color: "var(--rel-assignment)", marker: "assignment"},
+                  result: {label: "결과", color: "var(--rel-result)", marker: "result"},
+                  message: {label: "메시지", color: "var(--rel-message)", marker: "message"},
+                  derived: {label: "결과(도출)", color: "var(--rel-result)", marker: "result"},
+                  delegation: {label: "위임", color: "var(--rel-delegation)", marker: "delegation"}};
+const W = 278, H = 158, SW = 230, SH = 104, GAP_X = 300;
+const ROW = 66, TOP = 18;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SVG_TAGS = new Set(["svg", "g", "line", "path", "text", "rect", "circle", "defs", "marker", "animateMotion", "title"]);
+
+let bundle = null, selected = null, shownDetail = null, showDerived = true;
+let liveOnly = stored("live-only") !== "0";  // Cards of sessions that left herdr pile up across runs.
+let graphSelected = null, shownInspector = null, model = null, lastPos = new Map(), box = {x: 0, y: 0, w: 0, h: 0};
+const cam = {scale: 1, x: 40, y: 40};
+let autoFit = true, drag = null;
+const openPanels = new Set(), nodeEls = new Map(), linkEls = new Map(), lastStatus = new Map();
+const positions = new Map(Object.entries(readJson("positions") || {}));
+let tab = stored("tab") === "sequence" ? "sequence" : "graph";
+
+function stored(key, value) {  // Per-viewer conveniences only; the page works without storage.
+  try {
+    if (value === undefined) return localStorage.getItem("herdr-trace:" + key);
+    localStorage.setItem("herdr-trace:" + key, value);
+  } catch (error) { return null; }
+}
+function readJson(key) { try { return JSON.parse(stored(key) || "null"); } catch (error) { return null; } }
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs = {}, ...children) {
+  const node = SVG_TAGS.has(tag) ? document.createElementNS("http://www.w3.org/2000/svg", tag) : document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value === undefined || value === null || value === false) continue;
+    if (key === "text") node.textContent = value;
+    else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value === true ? "" : value);
+  }
+  for (const child of children.flat(Infinity)) if (child !== null && child !== undefined) node.append(child);
+  return node;
+}
+const short = (id) => id ? (id.length > 14 ? id.slice(0, 8) + "…" + id.slice(-4) : id) : "—";
+const when = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d) ? iso : [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":");
+};
+const providerName = (p) => ({codex: "Codex", claude: "Claude Code"})[p] || p;
+const time = (iso) => { const d = new Date(iso); return isNaN(d) ? 0 : d.getTime(); };
+function elapsed(since) {
+  const seconds = Math.max(0, Math.round((Date.now() - time(since)) / 1000));
+  return seconds >= 3600 ? `${Math.floor(seconds / 3600)}시간 ${Math.floor(seconds % 3600 / 60)}분` : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function phase(node) {  // A redrawn or newly working card joins the shared rhythm instead of restarting it.
+  const now = performance.now();
+  node.style.setProperty("--sweep-delay", `-${Math.round(now % 1800)}ms`);
+  node.style.setProperty("--ring-delay", `-${Math.round(now % 2400)}ms`);
+  return node;
+}
+function webLink(agent, cls, text) {  // herdr web ui opens the pane; this page itself never types into an agent.
+  if (!agent.web_link || !/^https?:\/\//.test(agent.web_link)) return null;
+  // One named tab: the next link loads in the web ui tab this page opened instead of adding a tab. A browser finds a
+  // named tab of another origin only through its opener, so the link keeps the opener (no noopener); the web ui is
+  // the user's own local app. The page already sends no referrer.
+  return el("a", {class: `${cls}${agent.status === "blocked" ? " attention" : ""}`, href: agent.web_link, target: "herdr-web-ui",
+    referrerpolicy: "no-referrer",
+    title: `${agent.name || "에이전트"}의 pane ${agent.pane_id}을 herdr web ui에서 연다. 이 화면에서 연 web ui 탭이 있으면 그 탭에서 연다. web ui가 이 화면이 읽는 herdr 세션에 붙어 있어야 같은 pane이다.`,
+    text: text || (agent.status === "blocked" ? "응답하러 가기 ↗" : "herdr web ui ↗")});
+}
+
+function edgeLabel(edge) {
+  if (edge.basis === "derived" && edge.interim) return "중간 응답(맡긴 일 대기 · 결과 아님)";
+  if (edge.basis === "derived") return edge.explicit_result ? "결과(도출 · 명시 결과 있음)" : "결과(수신 세션 기록에서 도출)";
+  const kind = edge.kind === "result" ? "결과(명시 전송)" : (KIND[edge.kind] || edge.kind);
+  const unverified = edge.sender_verification && edge.sender_verification.method === "declared" ? " · 보낸 쪽 미검증" : "";
+  const late = edge.delivery.latency_seconds >= 5 ? ` · ${Math.round(edge.delivery.latency_seconds)}초 뒤` : "";
+  return `${kind} · ${edge.delivery.label}${late}${unverified}`;
+}
+function edgeStyle(edge) {
+  const color = `var(--rel-${edge.kind === "assignment" ? "assignment" : edge.kind === "result" ? "result" : "message"})`;
+  if (edge.basis === "derived") return edge.interim ? {color: "var(--st-unknown)", dash: "3 5"} : {color, dash: "7 5"};
+  const status = edge.delivery.status;
+  if (status === "undelivered") return {color: "var(--st-failed)", dash: "2 4", cross: true};
+  if (status === "unconfirmed") return {color: "var(--st-unknown)", dash: "5 4"};
+  if (status === "queued" || status === "pending_busy") return {color, dash: "2 4"};
+  return {color, dash: null};
+}
+
+// ---------- top bar, stats, legend ----------
+function renderTop() {
+  const herdr = bundle.herdr || {};
+  const pill = $("herdr");
+  const text = {ok: `herdr ${herdr.version || ""} · protocol ${herdr.protocol}`, unavailable: "herdr 연결 안 됨",
+                not_configured: "herdr 조회 안 함", protocol_mismatch: `herdr protocol ${herdr.protocol} (확인 필요)`}[herdr.status] || "herdr 상태 미확인";
+  pill.dataset.tone = {ok: "good", unavailable: "bad", protocol_mismatch: "warn"}[herdr.status] || "";
+  const events = herdr.events || {};
+  const feed = {subscribed: "이벤트 구독", reconnecting: "재연결 중 · 조회만", off: "조회만", disabled: "조회만"}[events.state];
+  pill.querySelector("span").textContent = herdr.status === "ok" && feed ? `${text} · ${feed}` : text;
+  pill.title = [herdr.detail || herdr.socket || "", events.detail ? `이벤트: ${events.detail}` : "", events.seen ? `받은 이벤트 ${events.seen}개` : ""].filter(Boolean).join("\n");
+  $("updated").textContent = `저널 이벤트 ${bundle.journal_events}개 · ${when(bundle.generated_at)} 갱신`;
+  const errors = $("errors");
+  errors.hidden = !bundle.errors.length;
+  errors.replaceChildren(...bundle.errors.map((e) => el("div", {class: "banner", text: e})));
+  const journal = bundle.edges.filter((e) => e.basis === "journal");
+  const count = (test) => journal.filter(test).length;
+  const stat = (label, value, tone) => el("span", {class: value ? tone || "" : ""}, label, " ", el("b", {text: String(value)}));
+  $("stats").replaceChildren(
+    stat("응답 대기", bundle.agents.filter((a) => a.live && a.status === "blocked").length, "warn"),
+    stat("전달 확인", count((e) => e.delivery.status.startsWith("confirmed"))),
+    stat("이동 중", count((e) => PENDING.has(e.delivery.status)), "busy"),
+    stat("미전달", count((e) => e.delivery.status === "undelivered"), "bad"),
+    stat("보낸 쪽 미검증", count((e) => (e.sender_verification || {}).method === "declared"), "warn"),
+    stat("사람 입력", bundle.unattributed.length));
+}
+function renderLegend() {
+  const item = (label, color, dash) => el("span", {}, el("svg", {viewBox: "0 0 26 8"},
+    el("line", {x1: 0, x2: 26, y1: 4, y2: 4, stroke: color, "stroke-width": 2, "stroke-dasharray": dash})), label);
+  $("legend").replaceChildren(item("작업 요청", "var(--rel-assignment)"), item("결과", "var(--rel-result)"),
+    item("결과(도출)", "var(--rel-result)", "7 5"), item("메시지", "var(--rel-message)"), item("위임", "var(--rel-delegation)"),
+    item("이동 중", "var(--st-running)", "6 8"), item("미전달", "var(--st-failed)", "2 4"));
+}
+
+// ---------- graph model ----------
+function shownAgents() {  // With nobody in herdr there is nothing to narrow to, so everyone shows.
+  const live = bundle.agents.filter((agent) => agent.live);
+  return liveOnly && live.length ? live : bundle.agents;
+}
+function shownEdge(edge, keys) {
+  return keys.has(edge.from_card || edge.from_key) && keys.has(edge.to_card || edge.to_key);
+}
+function renderFilter() {
+  const live = bundle.agents.filter((agent) => agent.live).length, hidden = bundle.agents.length - shownAgents().length;
+  $("live-only").checked = liveOnly;
+  $("live-only").disabled = !live;
+  $("live-only-label").title = live ? "herdr 밖으로 나간 세션의 카드와 그 선을 숨긴다" : "지금 herdr에 있는 에이전트가 없어 모두 보인다";
+  $("hidden-note").textContent = hidden ? ` · ${hidden}개 숨김` : "";
+}
+function buildModel() {
+  const cards = shownAgents().map((agent) => ({key: agent.key, agent}));
+  const known = new Set(cards.map((c) => c.key));
+  const subs = [];
+  for (const agent of shownAgents()) for (const sub of agent.subagents || []) {
+    const key = `sub:${agent.key}:${sub.agent_id}`;
+    subs.push({key, parent: agent.key, subagent: sub});
+    known.add(key);
+  }
+  const groups = new Map();
+  const add = (from, to, category, edge) => {
+    if (!known.has(from) || !known.has(to)) return;
+    const key = `${from}|${to}|${category}`;
+    if (!groups.has(key)) groups.set(key, {key, from, to, category, edges: []});
+    groups.get(key).edges.push(edge);
+  };
+  for (const edge of bundle.edges) {
+    const from = edge.from_card || edge.from_key, to = edge.to_card || edge.to_key;
+    if (edge.basis === "derived") { if (showDerived) add(from, to, "derived", edge); }
+    else add(from, to, edge.kind in CATEGORY ? edge.kind : "message", edge);
+  }
+  for (const sub of subs) add(sub.parent, sub.key, "delegation", {id: `delegation:${sub.key}`, basis: "delegation", sub: sub.subagent,
+    at: sub.subagent.started_at || (sub.subagent.call || {}).at});
+  for (const group of groups.values()) {
+    const edges = group.edges, status = (e) => (e.delivery || {}).status || "";
+    group.edges.sort((a, b) => time(a.at) - time(b.at));
+    group.total = edges.length;
+    group.pending = group.category === "delegation" ? edges.filter((e) => e.sub.status === "running").length : edges.filter((e) => PENDING.has(status(e))).length;
+    group.undelivered = edges.filter((e) => status(e) === "undelivered").length;
+    group.unverified = edges.filter((e) => (e.sender_verification || {}).method === "declared").length;
+    group.interim = group.category === "derived" && edges.every((e) => e.interim);
+    group.secondary = group.category === "derived" && edges.every((e) => e.explicit_result || e.interim);
+    group.flash = edges.some((e) => e.message_id && status(e).startsWith("confirmed") && lastStatus.has(e.message_id) && !lastStatus.get(e.message_id).startsWith("confirmed"));
+    group.latest = Math.max(...edges.map((e) => time(e.at)));
+  }
+  return {cards, subs, groups: [...groups.values()]};
+}
+function cardCounts(key) {
+  const journal = bundle.edges.filter((e) => e.basis === "journal");
+  const mine = (side) => (e) => (e[side + "_card"] || e[side + "_key"]) === key;
+  return {sent: journal.filter(mine("from")).length, received: journal.filter(mine("to")).length,
+          moving: journal.filter((e) => (mine("from")(e) || mine("to")(e)) && PENDING.has(e.delivery.status)).length};
+}
+
+// ---------- layout ----------
+function perRow() {  // Narrow screens stack cards so the fitted view stays readable.
+  const width = $("graph").clientWidth || 1200;
+  return width < 700 ? 1 : width < 1100 ? 2 : 4;
+}
+function layout(m) {
+  const pos = new Map(), columns = perRow();
+  const subsOf = (key) => m.subs.filter((s) => s.parent === key);
+  let y = 0;
+  for (let start = 0; start < m.cards.length; start += columns) {
+    const row = m.cards.slice(start, start + columns);
+    const tallest = Math.max(0, ...row.map((c) => subsOf(c.key).length));
+    row.forEach((card, i) => {
+      pos.set(card.key, {x: i * (W + GAP_X), y});
+      subsOf(card.key).forEach((sub, j) => pos.set(sub.key, {x: i * (W + GAP_X) + 24, y: y + H + 70 + j * (SH + 22)}));
+    });
+    y += H + 150 + (tallest ? 70 + tallest * (SH + 22) : 0);
+  }
+  for (const [key, manual] of positions) if (pos.has(key)) pos.set(key, manual);  // The viewer's own arrangement wins.
+  return pos;
+}
+const size = (key) => key.startsWith("sub:") ? {w: SW, h: SH} : {w: W, h: H};
+function bounds(pos) {
+  const items = [...pos.entries()].map(([key, p]) => ({...p, ...size(key)}));
+  if (!items.length) return {x: 0, y: 0, w: 0, h: 0};
+  const x = Math.min(...items.map((p) => p.x)), y = Math.min(...items.map((p) => p.y));
+  return {x, y, w: Math.max(...items.map((p) => p.x + p.w)) - x, h: Math.max(...items.map((p) => p.y + p.h)) - y};
+}
+
+// ---------- nodes ----------
+function nodeContent(card) {
+  if (card.subagent) {
+    const sub = card.subagent, status = sub.status === "completed" ? "completed" : sub.status === "running" ? "running" : "unknown";
+    return {status, tone: TONE[status], outside: false, parts: [
+      el("div", {class: "node-head"}, el("span", {class: "node-dot"}), el("span", {class: "node-tool", "data-provider": "sub", text: "서브"}),
+        el("span", {class: "node-title", text: sub.agent_type || "서브에이전트"}),
+        el("span", {class: "node-state", text: {completed: "완료", running: "진행 중"}[status] || "확인 불가"})),
+      el("div", {class: "node-role", text: sub.description || sub.prompt || "설명 없음"}),
+      el("div", {class: "node-foot", text: `${sub.background ? "백그라운드 · " : ""}${short(sub.agent_id)}`})]};
+  }
+  const agent = card.agent, turn = agent.turn || {}, counts = cardCounts(card.key);
+  const status = agent.live ? agent.status || "unknown" : "outside";
+  const timeLine = !turn.started_at ? el("div", {class: "node-time", text: "아직 턴 기록이 없다"})
+    : turn.status === "open" && agent.live && agent.status === "working"
+      ? el("div", {class: "node-time", "data-since": turn.started_at, text: `턴 진행 ${elapsed(turn.started_at)}`})
+    : turn.status === "open" ? el("div", {class: "node-time", text: `${when(turn.started_at)} 시작한 턴이 기록상 열려 있음`})
+    : el("div", {class: "node-time", text: `${when(turn.finished_at || turn.started_at)} 끝남 · 턴 ${turn.count}개`});
+  return {status, tone: TONE[status] || TONE.unknown, outside: !agent.live, parts: [
+    el("div", {class: "node-head"}, el("span", {class: "node-dot"}),
+      el("span", {class: "node-tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
+      el("span", {class: "node-title", text: agent.name || "(이름 없음)"}),
+      el("span", {class: "node-state", text: agent.live ? agent.status_label : "herdr 밖"})),
+    el("div", {class: "node-role", text: turn.title ? `${turn.status === "open" ? "지금" : "마지막"}: ${turn.title}` : "턴 기록 없음"}),
+    timeLine,
+    el("div", {class: "node-foot", text: [`보냄 ${counts.sent}`, `받음 ${counts.received}`, counts.moving ? `이동 중 ${counts.moving}` : null,
+      short(agent.session_id), (agent.sessions || []).length > 1 ? `세션 ${agent.sessions.length}개` : null].filter(Boolean).join(" · ")})]};
+}
+function renderNodes(m, pos) {
+  const world = $("world"), keep = new Set();
+  for (const card of [...m.cards, ...m.subs.map((s) => ({key: s.key, subagent: s.subagent}))]) {
+    keep.add(card.key);
+    let node = nodeEls.get(card.key);
+    if (!node) {
+      node = el("div", {class: "node", tabindex: 0, role: "button", "data-key": card.key});
+      node.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectGraph("agent", card.key); } });
+      world.append(node);
+      nodeEls.set(card.key, node);
+    }
+    const content = nodeContent(card);
+    const signature = JSON.stringify([content.status, content.outside, content.parts.map((p) => p.textContent)]);
+    if (node.dataset.signature !== signature) {
+      node.dataset.signature = signature;
+      node.replaceChildren(...content.parts);
+    }
+    node.classList.toggle("sub", Boolean(card.subagent));
+    node.classList.toggle("outside", content.outside);
+    if (node.dataset.status !== content.status) phase(node).dataset.status = content.status;
+    node.style.setProperty("--tone", content.tone);
+    node.setAttribute("aria-label", content.parts.map((p) => p.textContent).join(" · "));
+    const link = card.agent && card.agent.live ? webLink(card.agent, "node-link") : null, shown = linkEls.get(card.key);
+    const want = link ? [link.href, link.className, link.textContent, link.title].join("|") : null;
+    if (shown && (!link || shown.dataset.signature !== want)) { shown.remove(); linkEls.delete(card.key); }
+    if (link && !linkEls.has(card.key)) {  // Replaced only on change, so keyboard focus survives updates.
+      link.dataset.signature = want;
+      node.after(link);
+      linkEls.set(card.key, link);
+    }
+    place(card.key, pos.get(card.key));
+    node.classList.toggle("selected", Boolean(graphSelected && graphSelected.type === "agent" && graphSelected.key === card.key));
+  }
+  for (const [key, node] of nodeEls) if (!keep.has(key)) { node.remove(); nodeEls.delete(key); }
+  for (const [key, link] of linkEls) if (!keep.has(key)) { link.remove(); linkEls.delete(key); }
+}
+function place(key, p) {
+  const node = nodeEls.get(key), link = linkEls.get(key);
+  node.style.left = p.x + "px";
+  node.style.top = p.y + "px";
+  if (link) { link.style.left = p.x + W - 14 + "px"; link.style.top = p.y + H + "px"; }
+}
+
+// ---------- wires ----------
+function markers() {
+  const defs = el("defs");
+  for (const [name, color] of Object.entries({assignment: "var(--rel-assignment)", result: "var(--rel-result)", message: "var(--rel-message)",
+                                              delegation: "var(--rel-delegation)", failed: "var(--st-failed)", unknown: "var(--st-unknown)"})) {
+    defs.append(el("marker", {id: `arrow-${name}`, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse"},
+      el("path", {d: "M0 0L10 5L0 10Z", fill: color})));
+  }
+  return defs;
+}
+function groupLabel(group) {
+  if (group.category === "delegation") {
+    const sub = group.edges[0].sub;
+    return `위임 · ${{running: "진행 중", completed: "완료"}[sub.status] || "확인 불가"}`;
+  }
+  const base = group.category !== "derived" ? CATEGORY[group.category].label : group.interim ? "중간 응답(맡긴 일 대기)"
+    : group.secondary ? "결과(도출 · 명시 결과 있음)" : "결과(도출)";
+  return [`${base}${group.total > 1 ? ` ×${group.total}` : ""}`, group.pending ? `${group.pending} 이동 중` : null,
+          group.undelivered ? `${group.undelivered} 미전달` : null, group.unverified ? `미검증 ${group.unverified}` : null].filter(Boolean).join(" · ");
+}
+function groupStyle(group) {
+  const kind = CATEGORY[group.category];
+  if (group.undelivered && group.undelivered === group.total) return {color: "var(--st-failed)", dash: "2 4", marker: "failed"};
+  if (group.interim) return {color: "var(--st-unknown)", dash: "3 5", marker: "unknown"};
+  if (group.category === "derived") return {color: kind.color, dash: "7 5", marker: kind.marker};
+  const confirmed = group.edges.filter((e) => ((e.delivery || {}).status || "").startsWith("confirmed")).length;
+  if (group.category !== "delegation" && !confirmed && !group.pending) return {color: "var(--st-unknown)", dash: "5 4", marker: "unknown"};
+  return {color: kind.color, dash: null, marker: kind.marker};
+}
+function geometry(group, pos, lane, lanes) {
+  const a = {...pos.get(group.from), ...size(group.from)}, b = {...pos.get(group.to), ...size(group.to)};
+  const offset = (lane - (lanes - 1) / 2) * 30;
+  const vertical = group.category === "delegation" || Math.abs((a.x + a.w / 2) - (b.x + b.w / 2)) < Math.min(a.w, b.w);
+  if (vertical) {
+    const down = b.y >= a.y;
+    const x1 = a.x + a.w / 2 + offset, x2 = b.x + b.w / 2 + offset, y1 = down ? a.y + a.h : a.y, y2 = down ? b.y : b.y + b.h;
+    const dy = Math.max(40, Math.abs(y2 - y1) * .45) * (down ? 1 : -1);
+    // Labels of stacked lanes sit in one column right of the outermost lane, staggered so they do not overlap.
+    const right = Math.max(a.x + a.w / 2, b.x + b.w / 2) + ((lanes - 1) / 2) * 30 + 12;
+    return {d: `M${x1} ${y1} C${x1} ${y1 + dy} ${x2} ${y2 - dy} ${x2} ${y2}`,
+            mid: {x: right, y: (y1 + y2) / 2 + (lane - (lanes - 1) / 2) * 16 + 4}, anchor: "start"};
+  }
+  const forward = b.x >= a.x;
+  const x1 = forward ? a.x + a.w : a.x, x2 = forward ? b.x : b.x + b.w;
+  const y1 = a.y + a.h / 2 + offset, y2 = b.y + b.h / 2 + offset;
+  const dx = Math.max(60, Math.abs(x2 - x1) * .45) * (forward ? 1 : -1);
+  return {d: `M${x1} ${y1} C${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`, mid: {x: (x1 + x2) / 2, y: (y1 + y2) / 2 - 9}, anchor: "middle"};
+}
+function renderWires(m, pos) {
+  const svg = $("wires"), focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.group : null;
+  svg.replaceChildren(markers());
+  const pairs = new Map();
+  for (const group of m.groups) {
+    if (!pos.has(group.from) || !pos.has(group.to)) continue;
+    const key = [group.from, group.to].sort().join("|");
+    if (!pairs.has(key)) pairs.set(key, []);
+    pairs.get(key).push(group);
+  }
+  for (const list of pairs.values()) list.forEach((group, lane) => {
+    const shape = geometry(group, pos, lane, list.length), style = groupStyle(group);
+    const isSelected = Boolean(graphSelected && graphSelected.type === "group" && graphSelected.key === group.key);
+    const g = el("g", {class: `grel${isSelected ? " selected" : ""}${group.secondary ? " secondary" : ""}`, tabindex: 0, role: "button",
+      "data-group": group.key, "aria-label": `${nameOf(group.from)} → ${nameOf(group.to)} · ${groupLabel(group)}`,
+      onkeydown: (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectGraph("group", group.key); } }});
+    g.append(el("path", {class: "hit", d: shape.d}));
+    g.append(el("path", {class: `gedge${group.pending ? " running" : ""}${group.flash ? " flash" : ""}`, d: shape.d, stroke: style.color,
+      "stroke-dasharray": group.pending ? null : style.dash, "marker-end": `url(#arrow-${style.marker})`}));
+    if (group.pending && !reduceMotion) {
+      const dot = el("circle", {r: 4.5, fill: style.color});
+      dot.append(el("animateMotion", {dur: "1.6s", repeatCount: "indefinite", path: shape.d}));
+      g.append(dot);
+    }
+    g.append(el("text", {class: "glabel", x: shape.mid.x, y: shape.mid.y, "text-anchor": shape.anchor, fill: style.color, text: groupLabel(group)}));
+    svg.append(g);
+  });
+  if (focused) for (const g of svg.querySelectorAll(".grel")) if (g.dataset.group === focused) g.focus({preventScroll: true});
+}
+function nameOf(key) {
+  const agent = bundle.agents.find((a) => a.key === key);
+  if (agent) return agent.name || short(agent.session_id);
+  const sub = model && model.subs.find((s) => s.key === key);
+  return sub ? (sub.subagent.agent_type || "서브에이전트") : short(key);
+}
+
+// ---------- camera ----------
+function applyView() {
+  $("world").style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.scale})`;
+  $("zoom-label").textContent = Math.round(cam.scale * 100) + "%";
+}
+function fitView() {
+  const rect = $("graph").getBoundingClientRect();
+  if (!box.w || !rect.width || !rect.height) return applyView();
+  const pad = 56;
+  cam.scale = Math.max(.25, Math.min(1.1, (rect.width - pad * 2) / box.w, (rect.height - pad * 2 - 30) / box.h));
+  cam.x = (rect.width - box.w * cam.scale) / 2 - box.x * cam.scale;
+  cam.y = Math.max(28, (rect.height - box.h * cam.scale) / 2 - 18) - box.y * cam.scale;
+  applyView();
+}
+function zoomBy(factor, x, y) {
+  const rect = $("graph").getBoundingClientRect();
+  x = x ?? rect.width / 2; y = y ?? rect.height / 2;
+  const next = Math.min(2.2, Math.max(.25, cam.scale * factor));
+  cam.x = x - (x - cam.x) * next / cam.scale;
+  cam.y = y - (y - cam.y) * next / cam.scale;
+  cam.scale = next;
+  autoFit = false;
+  applyView();
+}
+
+function renderGraph() {
+  model = buildModel();
+  const pos = layout(model);
+  lastPos = pos;
+  box = bounds(pos);
+  $("graph-empty").hidden = model.cards.length > 0;
+  renderNodes(model, pos);
+  renderWires(model, pos);
+  if (autoFit) fitView(); else applyView();
+  renderInspector();
+}
+
+// ---------- inspector ----------
+function selectGraph(type, key) {
+  graphSelected = graphSelected && graphSelected.type === type && graphSelected.key === key ? null : {type, key};
+  if (!model) return;
+  renderNodes(model, lastPos);
+  renderWires(model, lastPos);
+  renderInspector();
+}
+function statusText(edge) {
+  if (edge.basis === "derived" && edge.interim) return "중간 응답 · 맡긴 일 대기";
+  if (edge.basis === "derived") return edge.explicit_result ? "도출 · 명시 결과 있음" : "도출";
+  const late = edge.delivery.latency_seconds != null ? ` · ${edge.delivery.latency_seconds}초` : "";
+  return `${edge.delivery.label}${late}`;
+}
+function edgeDetail(edge) {
+  const d = edge.delivery || {};
+  const parts = [facts([["보낸 쪽", edge.from_key], ["받는 쪽", edge.to_key], ["종류", KIND[edge.kind] || edge.kind],
+      ["근거 종류", edge.basis === "derived" ? "도출(받는 세션의 턴 최종 응답)" : "명시(래퍼 저널)"], ["시각", edge.at],
+      ["메시지 ID", edge.message_id], ["답하는 메시지", edge.reply_to]]),
+    el("pre", {text: edge.text || ""})];
+  if (edge.basis === "journal") {
+    const v = edge.sender_verification;
+    parts.push(panel(`${edge.id}:journal`, `저널 · seq ${d.journal_seq}`, facts([["event_id", d.journal_event_id], ["기록 시각", d.journal_at],
+      ["보낸 쪽 확인", v ? `${VERIFY[v.method] || v.method} · ${v.detail || ""}` : "기록 없음(이전 래퍼)"]])));
+    parts.push(panel(`${edge.id}:outcome`, `전송 결과 · ${d.outcome ? d.outcome.outcome : "기록 없음"}`,
+      d.outcome ? facts([["seq", d.outcome.seq], ["시각", d.outcome.at], ["오류 코드", d.outcome.error_code], ["오류 내용", d.outcome.error_message]])
+                : el("div", {class: "meta", text: "전송 결과 이벤트가 아직 없다."})));
+    parts.push(panel(`${edge.id}:receipt`, `수신 기록 · ${d.label}${d.duplicates ? ` · 중복 ${d.duplicates}건` : ""}`,
+      d.receipts && d.receipts.length ? d.receipts.map(receipt) : el("div", {class: "meta", text: d.reason || "받는 세션 기록에서 이 메시지 ID를 찾지 못했다."}),
+      facts([["보낼 때 받는 쪽 상태", d.recipient_status_at_send], ["전달까지", d.latency_seconds != null ? `${d.latency_seconds}초` : null],
+             ["받는 쪽 세션", d.recipient_resolved ? `보낼 때 보고되지 않음 · 같은 이름(${d.recipient_resolved.name})·도구(${d.recipient_resolved.agent || "?"})·pane(${d.recipient_resolved.pane_id})의 세션 ${d.recipient_resolved.candidates.length}개${(d.receipts || []).length ? "에서 메시지 ID로 찾음" : "에서 찾지 못함"}` : null]]),
+      d.variation ? facts([["본문 변형", d.variation.equal_after ? `${d.variation.equal_after} 후 같음` : `첫 차이 위치 ${d.variation.first_difference}`],
+                           ["길이(보냄/받음)", `${d.variation.sent_length} / ${d.variation.received_length}`]]) : null,
+      d.queue ? d.queue.map((q) => facts([["대기열 기록", `줄 ${q.line} · ${q.at}`]])) : null));
+  } else {
+    const ev = edge.evidence || {};
+    if (edge.interim) parts.push(el("div", {class: "banner", text: "이 턴은 맡긴 일(백그라운드 서브에이전트나 다른 에이전트에게 보낸 작업 요청)이 돌아오기 전에 끝났다. 마지막 응답은 진행 상황을 알린 중간 응답이고 결과가 아니다."}));
+    parts.push(panel(`${edge.id}:derived`, "도출 근거", facts([
+      ["기다린 일", (edge.waiting_on || []).map((w) => w.kind === "agent"
+        ? `${w.to_agent || "?"}에게 보낸 작업 요청 ${w.message_id} · ${w.answered_at ? `${when(w.answered_at)} 결과 도착` : "결과 없음"}`
+        : `서브에이전트 ${w.description || w.agent_id || ""} · ${w.finished_at ? `${when(w.finished_at)} 끝남` : w.status === "running" ? "진행 중" : "확인 불가"}`).join(", ") || null],["기록", ev.path], ["턴", ev.turn], ["최종 응답 record", (ev.final_record_ids || []).join(", ")],
+      ["턴 종료 record", ev.end_record_id], ["작업 중 흡수 입력에서 시작", edge.absorbed_mid_turn ? "예(다른 입력과 섞였을 수 있음)" : null],
+      ["같은 턴의 다른 입력", (edge.other_inputs_in_turn || []).length ? `${edge.other_inputs_in_turn.length}건 · 응답이 그 입력에도 답했을 수 있다` : "없음"],
+      ["명시 결과", edge.explicit_result ? `${edge.explicit_result} (기본 결과 경로)`
+        : edge.interim ? "없음 · 이 응답은 중간 응답이라 결과 근거가 아직 없다" : "없음 · 이 도출 결과가 유일한 결과 근거"]])));
+    parts.push(panel(`${edge.id}:readback`, `보낸 쪽 수신 · ${edge.sender_receipt.length ? "확인" : "미확인"}`,
+      edge.sender_receipt.length ? edge.sender_receipt.map((r) => facts([["도구 출력", r.record_id], ["줄", r.line], ["시각", r.at]]))
+        : el("div", {class: "meta", text: "보낸 쪽 기록의 도구 출력에서 이 응답 원문을 찾지 못했다."})));
+  }
+  return parts;
+}
+function feedItem(edge, label) {
+  const group = model.groups.find((g) => g.edges.includes(edge));
+  return el("button", {type: "button", onclick: () => group && selectGraph("group", group.key)},
+    el("time", {text: when(edge.at)}), el("strong", {text: label || `${edge.from_name} → ${edge.to_name} · ${edge.basis === "derived" ? (edge.interim ? "중간 응답" : "결과(도출)") : KIND[edge.kind] || edge.kind}`}),
+    el("span", {text: statusText(edge)}));
+}
+function renderInspector() {
+  const boxEl = $("inspector");
+  let parts, signature;
+  const group = graphSelected && graphSelected.type === "group" && model.groups.find((g) => g.key === graphSelected.key);
+  const card = graphSelected && graphSelected.type === "agent" && ([...model.cards, ...model.subs].find((c) => c.key === graphSelected.key));
+  if (group) {
+    signature = JSON.stringify(["group", group.key, group.edges]);
+    if (group.category === "delegation") {
+      const sub = group.edges[0].sub;
+      parts = [el("h2", {text: `${nameOf(group.from)} → ${sub.agent_type || "서브에이전트"}`}), el("div", {class: "sub-title", text: groupLabel(group)}),
+        facts([["설명", sub.description], ["상태", sub.status], ["백그라운드", sub.background ? "예" : "아니오"], ["시작", sub.started_at],
+               ["마지막 기록", sub.last_at], ["끝남", sub.finished_at], ["Agent 호출", sub.tool_use_id], ["기록", sub.path]]),
+        el("div", {class: "section-title", text: "위임 원문"}), el("pre", {text: sub.prompt || "기록 없음"}),
+        el("div", {class: "section-title", text: "최종 응답"}), el("pre", {text: sub.final_text || "아직 없음"})];
+    } else {
+      parts = [el("h2", {text: `${nameOf(group.from)} → ${nameOf(group.to)}`}), el("div", {class: "sub-title", text: groupLabel(group)}),
+        ...[...group.edges].reverse().map((edge) => panel(`${edge.id}:item`, `${when(edge.at)} · ${statusText(edge)}${edge.message_id ? " · " + edge.message_id : ""}`, edgeDetail(edge)))];
+    }
+  } else if (card && card.agent) {
+    const agent = card.agent, turn = agent.turn || {}, counts = cardCounts(card.key);
+    signature = JSON.stringify(["agent", agent, counts, bundle.unattributed.filter((u) => u.agent_key === agent.key)]);
+    const related = bundle.edges.filter((e) => e.basis === "journal" && [e.from_card || e.from_key, e.to_card || e.to_key].includes(card.key));
+    const inputs = bundle.unattributed.filter((u) => u.agent_key === agent.key || (agent.sessions || []).some((m) => m.key === u.agent_key));
+    parts = [el("h2", {text: `${providerName(agent.provider)} · ${agent.name || "(이름 없음)"}`}),
+      el("div", {class: "sub-title", text: agent.live ? `herdr 판정: ${agent.status_label}` : "herdr에서 보이지 않음 · 상태 미확인"}),
+      agent.live && agent.status === "blocked" ? el("div", {class: "banner", text: "herdr가 승인이나 질문을 기다린다고 판정했다(추정). 이 화면은 답하지 않는다. herdr나 herdr web ui에서 응답한다."}) : null,
+      agent.live ? webLink(agent, "web-link", "herdr web ui에서 이 pane 열기 ↗") : null,
+      facts([["지금 턴", turn.title ? `${turn.status === "open" ? "진행 중" : "끝남"} · ${turn.title}` : null], ["턴 시작", turn.started_at],
+             ["턴 종료", turn.finished_at], ["턴 수", turn.count], ["세션", agent.session_id], ["기록", agent.transcript], ["pane", agent.pane_id],
+             ["Claude 실행", agent.runtime ? `${agent.runtime.status || "?"} · pid ${agent.runtime.pid}${agent.runtime.alive ? "" : " (종료됨)"}` : null],
+             ["이전 세션", (agent.sessions || []).filter((m) => !m.current).map((m) => short(m.session_id)).join(", ") || null],
+             ["전달", `보냄 ${counts.sent} · 받음 ${counts.received} · 이동 중 ${counts.moving}`]]),
+      el("div", {class: "section-title", text: `주고받은 전달 ${related.length}건`}),
+      related.length ? el("div", {class: "feed"}, [...related].reverse().map((e) => feedItem(e))) : el("div", {class: "meta", text: "없음"}),
+      panel(`${agent.key}:inputs`, `사람 입력 ${inputs.length}건(선으로 그리지 않음)`,
+        inputs.length ? el("div", {class: "rows"}, inputs.map((u) => el("div", {}, el("strong", {text: `${when(u.at)} · ${u.reason}`}),
+          el("span", {class: "mono", text: `${u.path}:${u.line}`})))) : el("div", {class: "meta", text: "없음"}))];
+  } else if (card && card.subagent) {
+    const sub = card.subagent;
+    signature = JSON.stringify(["sub", sub]);
+    parts = [el("h2", {text: `서브에이전트 · ${sub.agent_type || ""}`}), facts([["설명", sub.description], ["상태", sub.status], ["기록", sub.path]]),
+      el("div", {class: "section-title", text: "위임 원문"}), el("pre", {text: sub.prompt || "기록 없음"}),
+      el("div", {class: "section-title", text: "최종 응답"}), el("pre", {text: sub.final_text || "아직 없음"})];
+  } else {
+    const keys = new Set(shownAgents().map((a) => a.key));
+    const recent = bundle.edges.filter((e) => (showDerived || e.basis !== "derived") && shownEdge(e, keys)).sort((a, b) => time(b.at) - time(a.at)).slice(0, 12);
+    signature = JSON.stringify(["overview", recent.map((e) => [e.id, statusText(e)]), graphSelected]);
+    parts = [el("h2", {text: graphSelected ? "선택한 항목이 지금 묶음에 없다" : "최근 활동"}),
+      el("div", {class: "sub-title", text: "선이나 카드를 누르면 원문과 근거를 보여 준다. 끌어서 이동하고 휠로 확대·축소한다."}),
+      recent.length ? el("div", {class: "feed"}, recent.map((e) => feedItem(e))) : el("div", {class: "meta", text: "아직 래퍼로 보낸 메시지가 없다."})];
+  }
+  if (signature === shownInspector) return;  // Keep the reading position and open panels while nothing changed.
+  shownInspector = signature;
+  boxEl.replaceChildren(...parts.filter(Boolean));
+}
+
+// ---------- pointer: pan, zoom, drag cards, click to select ----------
+function setupGraph() {
+  const graph = $("graph");
+  graph.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const rect = graph.getBoundingClientRect();
+    zoomBy(Math.exp(-event.deltaY * .0015), event.clientX - rect.left, event.clientY - rect.top);
+  }, {passive: false});
+  graph.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || !event.isPrimary || event.target.closest(".canvas-controls, a")) return;
+    const node = event.target.closest(".node"), rel = event.target.closest(".grel");
+    drag = {id: event.pointerId, x0: event.clientX, y0: event.clientY, moved: false, node, rel, cam: {...cam},
+            start: node ? {...lastPos.get(node.dataset.key)} : null};
+    graph.setPointerCapture(event.pointerId);
+  });
+  graph.addEventListener("pointermove", (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const dx = event.clientX - drag.x0, dy = event.clientY - drag.y0;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;  // A short press stays a click.
+    drag.moved = true;
+    graph.classList.add("dragging");
+    if (drag.node) {
+      const key = drag.node.dataset.key, next = {x: drag.start.x + dx / cam.scale, y: drag.start.y + dy / cam.scale};
+      positions.set(key, next);
+      lastPos.set(key, next);
+      place(key, next);
+      renderWires(model, lastPos);
+    } else {
+      cam.x = drag.cam.x + dx;
+      cam.y = drag.cam.y + dy;
+      autoFit = false;
+      applyView();
+    }
+  });
+  const finish = (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const done = drag;
+    drag = null;
+    graph.classList.remove("dragging");
+    if (done.moved) {
+      if (done.node) { stored("positions", JSON.stringify(Object.fromEntries(positions))); autoFit = false; box = bounds(lastPos); }
+      return;
+    }
+    if (event.type !== "pointerup") return;
+    if (done.node) selectGraph("agent", done.node.dataset.key);
+    else if (done.rel) selectGraph("group", done.rel.dataset.group);
+  };
+  graph.addEventListener("pointerup", finish);
+  graph.addEventListener("pointercancel", finish);
+  $("zoom-in").addEventListener("click", () => zoomBy(1.2));
+  $("zoom-out").addEventListener("click", () => zoomBy(1 / 1.2));
+  $("fit").addEventListener("click", () => { autoFit = true; fitView(); });
+  let columns = null;
+  new ResizeObserver(() => {
+    if (tab !== "graph" || !bundle) return;
+    if (columns !== perRow()) { columns = perRow(); renderGraph(); }  // Re-lay out when the column count changes.
+    else if (autoFit) fitView();
+  }).observe(graph);
+  setInterval(() => {  // Elapsed time on running turns, without re-rendering anything else.
+    for (const node of document.querySelectorAll("[data-since]")) node.textContent = `턴 진행 ${elapsed(node.dataset.since)}`;
+  }, 1000);
+}
+
+// ---------- time-order view (unchanged behaviour) ----------
+function renderAgents() {
+  const boxEl = $("agents");
+  const agents = shownAgents();
+  boxEl.style.setProperty("--cols", Math.max(1, agents.length));
+  if (!agents.length) return boxEl.replaceChildren(el("div", {class: "card empty", text: "아직 관찰한 에이전트가 없다. 저널 기록이나 herdr 연결을 기다린다."}));
+  boxEl.replaceChildren(...agents.map((agent) => phase(el("article", {class: "card agent", "data-status": agent.live ? agent.status : "outside"},
+    el("div", {class: "agent-head"},
+      el("span", {class: "tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
+      el("span", {class: "agent-name", text: agent.name || "(이름 없음)"}),
+      el("span", {class: "pill", "data-tone": AGENT_TONE[agent.status] || "", title: agent.live ? "herdr 판정(추정)" : "herdr에서 보이지 않음"},
+        el("i"), el("span", {text: agent.live ? agent.status_label : "herdr 밖 · 상태 미확인"}))),
+    el("dl", {},
+      el("dt", {text: "세션"}), el("dd", {text: agent.session_id, title: agent.key}),
+      el("dt", {text: "기록"}), el("dd", {text: agent.transcript ? agent.transcript.split("/").slice(-1)[0] : "찾지 못함", title: agent.transcript || ""}),
+      agent.title ? [el("dt", {text: "제목"}), el("dd", {text: agent.title, style: "font-family:var(--font-ui)"})] : null,
+      (agent.sessions || []).length > 1 ? [el("dt", {text: "이전 세션"}), el("dd", {},
+        agent.sessions.filter((m) => !m.current).map((m) => el("div", {text: `${short(m.session_id)} → fork`, title: m.transcript || m.key})))] : null,
+      agent.pane_id ? [el("dt", {text: "pane"}), el("dd", {}, agent.pane_id, agent.live ? webLink(agent, "web-link compact") : null)] : null,
+      agent.runtime ? [el("dt", {text: "Claude 실행"}), el("dd", {text: `${agent.runtime.status || "?"} · pid ${agent.runtime.pid}${agent.runtime.alive ? "" : " (종료됨)"}`})] : null),
+    (agent.subagents || []).length ? panel(`${agent.key}:subagents`, `서브에이전트 ${agent.subagents.length}개`,
+      el("div", {class: "rows"}, agent.subagents.map((sub) => el("div", {},
+        el("strong", {text: `${sub.agent_type || "agent"} · ${sub.status}${sub.background ? " · 백그라운드" : ""}`}),
+        el("span", {text: sub.description || ""}),
+        el("span", {class: "mono", text: sub.path.split("/").slice(-1)[0]}))))) : null))));
+}
+function renderLanes(agents) {
+  const lanes = $("lanes");
+  lanes.style.setProperty("--cols", Math.max(1, agents.length));
+  lanes.replaceChildren(...agents.map((agent) => el("div", {class: "lane"},
+    el("span", {class: "tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
+    el("span", {class: "lane-name", text: agent.name || short(agent.session_id)}),
+    el("span", {class: "pill", "data-tone": agent.live ? AGENT_TONE[agent.status] || "" : "", text: agent.live ? agent.status_label : "herdr 밖"}))));
+}
+function timeLayout(edges, agents) {
+  // Rows sit at their real times; gaps over two minutes fold into one marked band; edges keep room for labels.
+  const anchors = new Map();
+  const touch = (ms) => { if (!anchors.has(ms)) anchors.set(ms, []); return anchors.get(ms); };
+  for (const edge of edges) touch(time(edge.at) || 1).push(edge);
+  for (const agent of agents) for (const turn of agent.turns || []) { touch(time(turn.start) || 1); if (turn.end) touch(time(turn.end) || 1); }
+  const ymap = new Map(), edgeY = new Map(), gaps = [];
+  let y = TOP, prev = null, lastEdge = -Infinity;
+  for (const ms of [...anchors.keys()].sort((a, b) => a - b)) {
+    if (prev !== null) {
+      const seconds = (ms - prev) / 1000;
+      if (seconds > 120) { gaps.push({y: y + 24, seconds}); y += 50; }
+      else y += Math.min(110, seconds * 3);
+    }
+    for (const edge of anchors.get(ms)) { y = Math.max(y, lastEdge + ROW); edgeY.set(edge, y); lastEdge = y; }  // Keyed by row, not ID.
+    ymap.set(ms, y);
+    prev = ms;
+  }
+  return {ymap, edgeY, gaps, lastMs: prev, lastY: y};
+}
+function nowPosition(lay, now) {
+  // "Now" continues the same scale after the last recorded moment, folding a long quiet tail like any other gap.
+  const seconds = lay.lastMs === null ? 0 : Math.max(0, (now - lay.lastMs) / 1000);
+  if (seconds > 120) return {y: lay.lastY + 56, gap: {y: lay.lastY + 30, seconds}};
+  return {y: lay.lastY + Math.max(30, Math.min(110, seconds * 3)), gap: null};  // Stay clear of the last row's time label.
+}
+let live = null;  // Elements the clock moves in place, so a periodic tick never replaces what a reader may be clicking.
+function quiet(seconds) {
+  return seconds >= 3600 ? `${Math.floor(seconds / 3600)}시간 ${Math.round(seconds % 3600 / 60)}분` : `${Math.round(seconds / 60)}분`;
+}
+function tickNow(now) {
+  if (!live || !live.svg.isConnected) return;
+  const at = nowPosition(live.lay, now), height = at.y + 44;
+  live.svg.setAttribute("viewBox", `0 0 ${live.width} ${height}`);
+  live.svg.setAttribute("height", height);
+  for (const line of live.lifelines) line.setAttribute("y2", height);
+  for (const {bar, y1} of live.running) bar.setAttribute("height", Math.max(6, at.y - y1));
+  const [line, label] = live.now.children;
+  line.setAttribute("y1", at.y); line.setAttribute("y2", at.y);
+  label.setAttribute("y", at.y - 6);
+  label.textContent = `지금 ${when(new Date(now).toISOString())}`;
+  if (at.gap && !live.tail) {
+    live.tail = el("g", {class: "gap-mark"}, el("line", {x1: 0, x2: live.width}), el("text", {x: live.width / 2, "text-anchor": "middle"}));
+    live.svg.insertBefore(live.tail, live.now);
+  }
+  if (live.tail) {
+    if (!at.gap) { live.tail.remove(); live.tail = null; return; }
+    const [mark, text] = live.tail.children;
+    mark.setAttribute("y1", at.gap.y); mark.setAttribute("y2", at.gap.y);
+    text.setAttribute("y", at.gap.y - 6);
+    text.textContent = `⋯ ${quiet(at.gap.seconds)} 조용함 ⋯`;
+  }
+}
+let seenEdges = null, unseen = 0;
+function diagramAtBottom() {
+  const rect = $("diagram").getBoundingClientRect();
+  return rect.bottom <= window.innerHeight + 120;
+}
+function scrollToNow() {
+  const line = document.querySelector("#diagram .now");
+  if (line) window.scrollTo({top: window.scrollY + line.getBoundingClientRect().top - window.innerHeight * .65, behavior: reduceMotion ? "auto" : "smooth"});
+  unseen = 0;
+  $("follow").hidden = true;
+}
+function renderDiagram() {
+  const boxEl = $("diagram");
+  const focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.id : null;
+  const following = diagramAtBottom() && !selected;  // Measured before redrawing: follow only a reader already at the latest.
+  const agents = shownAgents(), keys = agents.map((a) => a.key), shown = new Set(keys);
+  const edges = bundle.edges.filter((e) => (showDerived || e.basis !== "derived") && shownEdge(e, shown)).sort((a, b) => time(a.at) - time(b.at));
+  renderLanes(agents);
+  if (!edges.length && !agents.some((a) => (a.turns || []).length)) return boxEl.replaceChildren(el("div", {class: "empty", text: "아직 래퍼로 보낸 메시지가 없다."}));
+  const width = boxEl.clientWidth || 800, cols = Math.max(1, keys.length), gap = 12;  // Columns line up with the agent cards and lanes.
+  const colWidth = (width - gap * (cols - 1)) / cols;
+  const x = (key) => { const i = keys.indexOf(key); return i < 0 ? null : i * (colWidth + gap) + colWidth / 2; };
+  const now = Date.now(), lay = timeLayout(edges, agents), at = nowPosition(lay, now), height = at.y + 44;
+  const svg = el("svg", {class: "diagram", viewBox: `0 0 ${width} ${height}`, height, role: "list"});
+  const lifelines = keys.map((key) => el("line", {class: "lifeline", x1: x(key), x2: x(key), y1: 0, y2: height}));
+  svg.append(...lifelines);
+  live = {svg, lay, width, lifelines, running: [], tail: null, now: null};
+  for (const quietBand of lay.gaps) svg.append(el("g", {class: "gap-mark"},
+    el("line", {x1: 0, x2: width, y1: quietBand.y, y2: quietBand.y}),
+    el("text", {x: width / 2, y: quietBand.y - 6, "text-anchor": "middle", text: `⋯ ${quiet(quietBand.seconds)} 조용함 ⋯`})));
+  agents.forEach((agent) => {
+    const cx = x(agent.key);
+    for (const turn of agent.turns || []) {
+      const y1 = lay.ymap.get(time(turn.start) || 1);
+      const running = !turn.end && turn.state === "open" && agent.live && agent.status === "working";
+      const y2 = turn.end ? lay.ymap.get(time(turn.end) || 1) : running ? at.y : y1 + 14;
+      const kind = running ? "running" : turn.state;
+      const span = turn.end ? `${when(turn.start)}–${when(turn.end)}` : running ? `${when(turn.start)}–지금` : `${when(turn.start)}– (기록상 닫히지 않음)`;
+      const bar = el("rect", {class: `bar ${kind}${turn.system ? " system" : ""}`, x: cx - 6, width: 12, y: y1, height: Math.max(6, y2 - y1), rx: 5},
+        el("title", {text: `${agent.name || ""} · ${span}${turn.title ? " · " + turn.title : ""}${turn.inputs > 1 ? ` · 입력 ${turn.inputs}건` : ""}`}));
+      if (running) live.running.push({bar, y1});
+      svg.append(bar);
+    }
+  });
+  edges.forEach((edge) => {
+    const y = lay.edgeY.get(edge), style = edgeStyle(edge);
+    let x1 = x(edge.from_card || edge.from_key), x2 = x(edge.to_card || edge.to_key);
+    if (x1 === null) x1 = 16; if (x2 === null) x2 = width - 16;
+    const dir = x2 >= x1 ? 1 : -1, tip = x2 - dir * 10, tail = x1 + dir * 8;
+    const g = el("g", {class: edge.basis === "derived" && (edge.explicit_result || edge.interim) ? "edge secondary" : "edge", role: "button", tabindex: 0, "data-id": edge.id, "aria-pressed": String(edge.id === selected),
+      "aria-label": `${edge.from_name} → ${edge.to_name} ${edgeLabel(edge)}`,
+      onclick: () => select(edge.id), onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(edge.id); } }});
+    g.append(el("rect", {class: "band", x: 4, y: y - 34, width: width - 8, height: ROW - 6, rx: 10}));
+    g.append(el("line", {class: "hit", x1: tail, x2: tip, y1: y, y2: y}));
+    g.append(el("line", {class: "shaft", x1: tail, x2: tip, y1: y, y2: y, stroke: style.color, "stroke-dasharray": style.dash}));
+    if (style.cross) g.append(el("path", {class: "shaft", stroke: style.color, d: `M${tip - 6} ${y - 6}L${tip + 6} ${y + 6}M${tip - 6} ${y + 6}L${tip + 6} ${y - 6}`}));
+    else g.append(el("path", {d: `M${x2 - dir * 6} ${y}L${x2 - dir * 17} ${y - 6}L${x2 - dir * 17} ${y + 6}Z`, fill: style.color}));
+    const mid = (x1 + x2) / 2;
+    g.append(el("text", {x: mid, y: y - 10, "text-anchor": "middle", text: edgeLabel(edge)}));
+    g.append(el("text", {class: "when", x: mid, y: y + 18, "text-anchor": "middle",
+      text: `${when(edge.at)} · ${edge.from_name} → ${edge.to_name}${edge.message_id ? " · " + edge.message_id : ""}`}));
+    svg.append(g);
+  });
+  live.now = el("g", {class: "now"}, el("line", {x1: 0, x2: width}), el("text", {x: width - 4, "text-anchor": "end"}));
+  svg.append(live.now);
+  boxEl.replaceChildren(svg);
+  tickNow(now);
+  if (focused) for (const g of svg.querySelectorAll(".edge")) if (g.dataset.id === focused) g.focus({preventScroll: true});
+  const count = edges.length;
+  if (seenEdges !== null && count > seenEdges) {
+    if (following) scrollToNow();
+    else { unseen += count - seenEdges; $("follow").textContent = `새 전달 ${unseen}건 ↓`; $("follow").hidden = false; }
+  }
+  seenEdges = count;
+}
+function renderDetail() {
+  const boxEl = $("detail");
+  const edge = bundle && bundle.edges.find((e) => e.id === selected);
+  const signature = edge ? JSON.stringify(edge) : selected ? "missing" : "none";
+  if (signature === shownDetail) return;  // Keep reading position and text selection while nothing changed.
+  shownDetail = signature;
+  if (!edge) return boxEl.replaceChildren(el("h2", {text: selected ? "선택한 선이 지금 묶음에 없다" : "선을 누르면 원문과 근거를 보여 준다"}));
+  boxEl.replaceChildren(el("h2", {text: `${edge.from_name} → ${edge.to_name} · ${edgeLabel(edge)}`}), ...edgeDetail(edge));
+}
+function select(id) {
+  selected = selected === id ? null : id;
+  renderDiagram(); renderDetail();
+}
+
+// ---------- shared pieces ----------
+function panel(key, title, ...body) {
+  const node = el("details", {"data-key": key, open: openPanels.has(key)}, el("summary", {text: title}), el("div", {}, ...body));
+  node.addEventListener("toggle", () => node.open ? openPanels.add(key) : openPanels.delete(key));
+  return node;
+}
+function facts(pairs) {
+  return el("dl", {class: "facts"}, pairs.filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .map(([k, v]) => [el("dt", {text: k}), el("dd", {class: typeof v === "string" && /^[\w:./-]+$/.test(v) && v.length > 20 ? "mono" : "", text: String(v)})]));
+}
+function receipt(r) {
+  return el("div", {}, facts([["기록", `${r.path}:${r.line}`], ["record ID", r.record_id], ["형태", r.form === "queued_command" ? "작업 중 흡수(queued_command)" : r.form],
+    ["시각", r.at], ["대화 진입", r.entered_at ? `${r.entered_at} (대기열에서 진행 중인 턴으로)` : null], ["턴", r.turn], ["사유", r.reason],
+    ["기록 형태", r.envelope ? `받는 도구가 감싸서 기록(${r.envelope.kind} id=${r.envelope.id}) · 안쪽 본문으로 비교` : null]]));
+}
+function renderExtras() {
+  const boxEl = $("extras");
+  const list = bundle.unattributed, names = Object.fromEntries(bundle.agents.map((a) => [a.key, a.name]));
+  const parts = [panel("unattributed", `에이전트 선으로 그리지 않은 입력 · ${list.length}건`,
+    list.length ? el("div", {class: "rows"}, list.map((u) => el("div", {},
+      el("strong", {text: `${names[u.agent_key] || u.agent_key} · ${when(u.at)} · ${u.reason}`}),
+      el("span", {class: "mono", text: `${u.path}:${u.line} · ${u.record_id}`})))) : el("div", {class: "meta", text: "없음"}))];
+  if (bundle.unreported_agents.length) parts.push(panel("unreported", `세션을 보고하지 않은 herdr 에이전트 · ${bundle.unreported_agents.length}`,
+    el("div", {class: "rows"}, bundle.unreported_agents.map((a) => el("div", {}, `${a.name || "(이름 없음)"} · ${a.agent || "?"} · ${a.pane_id} · ${a.status_label}`,
+      webLink(a, "web-link compact"))))));
+  boxEl.replaceChildren(...parts);
+}
+
+function showTab(next) {
+  tab = next;
+  stored("tab", next);
+  $("tab-graph").setAttribute("aria-selected", String(next === "graph"));
+  $("tab-sequence").setAttribute("aria-selected", String(next === "sequence"));
+  $("graph-view").hidden = next !== "graph";
+  $("sequence-view").hidden = next !== "sequence";
+  $("detail").hidden = next !== "sequence";
+  $("follow").hidden = true;
+  if (!bundle) return;
+  if (next === "graph") { if (autoFit) fitView(); } else { renderAgents(); renderDiagram(); renderDetail(); }
+}
+function render() {
+  if (!bundle) return;
+  renderTop();
+  renderFilter();
+  renderGraph();
+  if (tab === "sequence") { renderAgents(); renderDiagram(); renderDetail(); }
+  renderExtras();
+  for (const edge of bundle.edges) if (edge.message_id && edge.delivery) lastStatus.set(edge.message_id, edge.delivery.status);
+}
+
+function connect() {
+  const pill = $("connection");
+  const state = (tone, text) => { pill.dataset.tone = tone; pill.querySelector("span").textContent = text; };
+  const source = new EventSource("/api/stream");
+  source.onopen = () => state("good", "실시간");
+  source.onmessage = (event) => { bundle = JSON.parse(event.data); state("good", "실시간"); render(); };
+  source.addEventListener("source-error", (event) => state("bad", "수집 오류: " + JSON.parse(event.data).error));
+  source.onerror = () => state("warn", "다시 연결 중");
+}
+const SOURCE = {option: "실행 옵션", saved: "저장값", default: "기본값", none: "지정 안 됨"};
+async function renderSettings(note) {
+  const boxEl = $("settings");
+  let current;
+  try {
+    current = await (await fetch("/api/settings")).json();
+    $("session-name").textContent = current.session ? `세션 ${current.session}` : "";
+  } catch (error) {
+    return boxEl.replaceChildren(el("div", {class: "banner", text: "소스 설정을 읽지 못했다: " + error}));
+  }
+  const fixed = new Set(current.fixed || []);
+  const input = (name, value, disabled, placeholder) => el("input", {name, value: value || "", disabled, placeholder, spellcheck: "false"});
+  const form = el("form", {},
+    el("label", {}, "herdr 세션 이름", input("herdr_session", current.herdr_session, fixed.has("herdr_socket"), "예: work")),
+    el("label", {}, "herdr 소켓 경로(선택, 세션 이름보다 우선)", input("herdr_socket", current.herdr_socket_source === "saved" && !current.herdr_session ? current.herdr_socket : "", fixed.has("herdr_socket"), "~/.config/herdr/sessions/<이름>/herdr.sock")),
+    el("label", {}, "Claude Code 데이터 폴더", input("claude_dir", current.claude_dir_source === "saved" ? current.claude_dir : "", fixed.has("claude_dir"), current.claude_dir)),
+    el("label", {}, "herdr web ui 주소(선택 · 넣으면 카드에서 그 에이전트의 pane을 바로 연다)", input("herdr_web_url", current.herdr_web_url, false, "http://127.0.0.1:7317")),
+    el("div", {class: "status", text: `지금 쓰는 herdr 소켓: ${current.herdr_socket || "없음"} · ${current.herdr_socket ? (current.herdr_socket_exists ? "있음" : "없음(세션이 꺼져 있을 수 있다)") : "herdr를 조회하지 않는다"} · ${SOURCE[current.herdr_socket_source]}`}),
+    el("div", {class: "status", text: `Claude 폴더: ${current.claude_dir} · ${SOURCE[current.claude_dir_source]}${fixed.size ? " · 실행 옵션으로 정한 값은 여기서 바꿀 수 없다" : ""}`}),
+    el("div", {class: "status", text: `herdr web ui 링크: ${current.herdr_web_url ? current.herdr_web_url + "/?pane=<pane ID>" : "꺼짐"}`}),
+    el("div", {class: "meta", text: "herdr web ui는 자기를 처음 띄운 herdr 세션 하나에만 붙는다. pane ID(w1:p2 등)는 세션마다 겹치므로, web ui가 위 herdr 세션에 붙어 있을 때만 주소를 넣는다. 다른 세션에 붙어 있으면 같은 ID의 다른 pane이 열린다."}),
+    note ? el("div", {class: note.error ? "banner" : "status", text: note.text}) : null,
+    el("button", {type: "submit", text: "저장"}));
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const values = {};
+    for (const field of form.querySelectorAll("input:not(:disabled)")) values[field.name] = field.value.trim();
+    const reply = await fetch("/api/settings", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(values)});
+    const body = await reply.json().catch(() => ({}));
+    renderSettings(reply.ok ? {text: "저장했다. 다음 갱신부터 새 설정으로 읽는다."} : {error: true, text: "저장하지 못했다: " + (body.error || reply.status)});
+  });
+  const details = el("details", {open: !current.herdr_socket || note ? true : undefined},
+    el("summary", {text: `소스 설정 · herdr ${current.herdr_socket ? (current.session || current.herdr_session || "소켓 지정") : "지정 안 됨"} · web ui 링크 ${current.herdr_web_url ? "켜짐" : "꺼짐"}`}), el("div", {}, form));
+  boxEl.replaceChildren(details);
+}
+
+renderSettings();
+renderLegend();
+setupGraph();
+$("tab-graph").addEventListener("click", () => showTab("graph"));
+$("tab-sequence").addEventListener("click", () => showTab("sequence"));
+showTab(tab);
+$("live-only").addEventListener("change", (event) => {
+  liveOnly = event.target.checked;
+  stored("live-only", liveOnly ? "1" : "0");
+  autoFit = true;  // A different set of cards: fit the view to it.
+  seenEdges = null;  // Lines shown or hidden by the filter are not new deliveries.
+  if (bundle) render();
+});
+$("show-derived").addEventListener("change", (event) => { showDerived = event.target.checked; if (bundle) { renderGraph(); if (tab === "sequence") renderDiagram(); } });
+let diagramWidth = 0;
+new ResizeObserver(() => {  // Only a new width needs a new drawing; the clock changes the height every second.
+  const width = $("diagram").clientWidth;
+  if (width !== diagramWidth) { diagramWidth = width; if (bundle && tab === "sequence") renderDiagram(); }
+}).observe($("diagram"));
+$("follow").addEventListener("click", scrollToNow);
+window.addEventListener("scroll", () => { if (!$("follow").hidden && diagramAtBottom()) { unseen = 0; $("follow").hidden = true; } }, {passive: true});
+setInterval(() => { if (bundle && tab === "sequence" && !document.hidden) tickNow(Date.now()); }, 1000);
+connect();
+</script>
+</body>
+</html>

@@ -139,3 +139,48 @@ herdr-trace serve ◀── 저널 + 받는 쪽 기록 파일(~/.codex, ~/.claud
 - GitHub 계정과 플러그인 ID(`<owner>.herdr-trace`). PyPI에도 올릴지.
 - 세션이 여러 개일 때 서버를 세션마다 하나씩 띄울지, 하나가 여러 세션을 볼지.
 - 실험 저장소의 저널 형식과 호환을 유지할지(실측 기록을 새 화면에서 다시 볼 수 있게).
+
+## 10. 진행 기록
+
+### 1단계: 코어 추출 (2026-10-10, 완료)
+
+출처는 실험 저장소 `codex-dag-herdr`의 `b9edcae`다. 9장의 저널 호환 질문은 "호환 유지"로 정했다.
+이벤트 형식(`agent.message`, `agent.delivery`)을 그대로 두고, `serve --journal`로 실험 저널을 지정해 다시 볼 수 있다.
+
+**만든 것**
+
+| 파일 | 내용 |
+| --- | --- |
+| `src/herdr_trace/journal.py` | 덧붙이기만 하는 저널. 순번 확인, 옆 파일 잠금, 파일 권한 0600, 이벤트마다 ID |
+| `src/herdr_trace/server.py` | 127.0.0.1 서버. 토큰 필수(끄는 옵션 없음), Host·Origin 확인, CSP(`frame-ancestors 'none'`), SSE |
+| `src/herdr_trace/paths.py` | 세션별 상태 폴더(`$XDG_STATE_HOME/herdr-trace/sessions/<세션>/`), herdr 소켓, Codex·Claude 폴더 |
+| `src/herdr_trace/cli.py` | `serve`, `send`, `rules`, `demo` |
+| `src/herdr_trace/demo.py`, `demo_data.py` | 꾸며낸 데이터와 가짜 herdr 소켓 |
+| `src/herdr_trace/rules.md` | 에이전트용 협업 규칙(영어) |
+
+**옮기면서 바꾼 것**
+
+- 머리말을 `[herdr-trace msg=…]`로 바꿨다. 실험 저널을 위해 `[codex-dag msg=…]`도 계속 읽는다.
+- 설정 파일 이름을 `settings.json`으로 바꿨다. 세션 폴더에 둔다.
+- 서버 주소는 `/api/bundle`, `/api/stream`, `/api/settings`다. 기존 화면 오버레이용 임베드 모드는 뺐다.
+- 화면 제목에 세션 이름을 보인다. 화면 문구는 아직 한국어다(2단계).
+
+**확인**
+
+- 테스트 74개가 Python 3.13과 3.12에서 통과했다. Python 3.11은 이 Mac에 없어 확인하지 못했다.
+  - 실험 저장소의 테스트 7개 파일을 옮겼다.
+  - 새로 넣은 것: 서버 접근(토큰, 쿠키, Host·Origin, 세션당 서버 하나, 기록 파일 권한), CLI(규칙, 보내기 거부, 데모), 경로.
+- 데모를 브라우저(Chromium)로 확인했다.
+  - 토큰 없이 열면 401과 안내가 나온다.
+  - 토큰 주소로 열면 HttpOnly 쿠키로 바뀌고 주소에서 토큰이 사라진다.
+  - 실시간 갱신이 되고 브라우저 오류는 없다.
+
+**사고와 재발 방지**
+
+- 처음 테스트를 돌릴 때 `herdr 밖에서는 보내지 않는다` 테스트가 실제 herdr 세션(`dag-lab`)의 reviewer에게 메시지 `hi`를 보냈다(메시지 `707912016607`).
+  - 이 작업 세션이 herdr pane 안에서 돌고 있었고, 테스트 도우미가 그 환경변수를 그대로 물려줬다.
+  - reviewer는 짧은 턴 하나로 "맡긴 일이 아니어서 답하지 않았다"고만 남겼다. 파일 변경이나 다른 전송은 없었다.
+- 재발 방지:
+  - 테스트 도우미는 `HERDR_*`와 에이전트 세션 변수를 지우고, herdr 실행 파일을 없는 경로로 고정한다.
+  - `scripts/test.sh`는 실행 전에 `HERDR_*`를 지운다.
+  - 고친 뒤 다시 돌린 테스트에서는 herdr로 나간 요청이 없었다.
