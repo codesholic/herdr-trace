@@ -3,7 +3,8 @@ name = "herdr-trace"
 version = "0.1.0"
 min_herdr_version = "0.9.0"
 description = "See what passed between your coding agents in herdr, and whether it arrived: a local, read-only view"
-platforms = ["linux", "macos"]
+# macOS only until Linux is checked (docs/plan.md, step 4).
+platforms = ["macos"]
 
 # Python 3.11 or later must be there before herdr-trace can start.
 [[build]]

@@ -2,7 +2,7 @@
 
 See what passed between your coding agents in [herdr](https://herdr.dev), and whether it arrived.
 
-> **Status: pre-alpha, not released.** The plan is in [docs/plan.md](docs/plan.md).
+> **Status: pre-alpha, not released. macOS only for now; Linux comes later.** The plan is in [docs/plan.md](docs/plan.md).
 
 herdr-trace is a local, read-only view of how agents from different tools (Codex, Claude Code) work
 together inside one herdr session: who asked whom for what, whether the message reached the other agent's

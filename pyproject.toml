@@ -14,7 +14,6 @@ dependencies = []
 classifiers = [
   "Environment :: Web Environment",
   "Operating System :: MacOS",
-  "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
 ]
 
