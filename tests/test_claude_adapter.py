@@ -28,24 +28,24 @@ class AdapterCase(unittest.TestCase):
 class IncrementalReadingChecks(AdapterCase):
     def test_claude_reader_parses_only_appended_lines_and_restarts_on_replacement(self):
         path = self.base / "s.jsonl"
-        append(path, [lab.human("u", 0, "질문", "p"), lab.reply("a", 1, "앞부분", "msg")], partial='{"type": "assi')
+        append(path, [lab.human("u", 0, "A question", "p"), lab.reply("a", 1, "First part", "msg")], partial='{"type": "assi')
         reader = claude_source.ClaudeTranscript(path)
         first = reader.update()
         self.assertEqual((len(first["prompts"]), first["turns"][0]["final_text"], first["turns"][0]["status"]),
-                         (1, "앞부분", "open"))
+                         (1, "First part", "open"))
         offset = reader.offset
         with path.open("a", encoding="utf-8") as handle:  # Finish the partial line, then add the turn end.
             handle.write('stant", "uuid": "b", "timestamp": "' + lab.at(2) + '", "sessionId": "' + lab.REVIEWER_ID
-                         + '", "message": {"id": "msg", "role": "assistant", "content": [{"type": "text", "text": "뒷부분"}]}}\n')
+                         + '", "message": {"id": "msg", "role": "assistant", "content": [{"type": "text", "text": "second part"}]}}\n')
         append(path, [lab.claude("system", 3, uuid="s", subtype="turn_duration", durationMs=3)])
         second = reader.update()
         self.assertIs(second, first)
         self.assertGreater(reader.offset, offset)
-        self.assertEqual((second["turns"][0]["final_text"], second["turns"][0]["status"]), ("앞부분\n뒷부분", "completed"))
+        self.assertEqual((second["turns"][0]["final_text"], second["turns"][0]["status"]), ("First part\nsecond part", "completed"))
         self.assertEqual(len(second["prompts"]), 1)
-        path.write_text(json.dumps(lab.human("v", 5, "새 파일", "q"), ensure_ascii=False) + "\n", encoding="utf-8")
+        path.write_text(json.dumps(lab.human("v", 5, "A new file", "q"), ensure_ascii=False) + "\n", encoding="utf-8")
         third = reader.update()
-        self.assertEqual([p["text"] for p in third["prompts"]], ["새 파일"])
+        self.assertEqual([p["text"] for p in third["prompts"]], ["A new file"])
 
     def test_codex_reader_parses_only_appended_lines(self):
         path = self.base / "rollout.jsonl"
@@ -63,22 +63,22 @@ class SubagentChecks(AdapterCase):
     def write_parent(self):
         path = self.base / "projects/-sandbox" / f"{lab.REVIEWER_ID}.jsonl"
         tool = {"type": "tool_use", "id": "toolu_agent", "name": "Agent",
-                "input": {"description": "테스트 확인", "prompt": "test_calc.py를 읽고 빠진 경우를 찾아줘.", "subagent_type": "Explore"}}
+                "input": {"description": "Check the tests", "prompt": "Read test_calc.py and find the missing cases.", "subagent_type": "Explore"}}
         lab.write_jsonl(path, [
-            lab.human("u", 0, "리뷰해줘", "p"),
+            lab.human("u", 0, "Please review", "p"),
             lab.claude("assistant", 1, uuid="a1", message={"id": "m1", "role": "assistant", "stop_reason": "tool_use", "content": [tool]}),
             lab.claude("user", 9, uuid="r1", toolUseResult={"agentId": "abc123", "status": "completed", "isAsync": False},
                        message={"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_agent",
-                                                              "content": [{"type": "text", "text": "빈 목록 테스트가 없다."}]}]}),
-            lab.reply("a2", 10, "리뷰 끝", "m2"),
+                                                              "content": [{"type": "text", "text": "There is no test for an empty list."}]}]}),
+            lab.reply("a2", 10, "Review done", "m2"),
             lab.claude("system", 11, uuid="s", subtype="turn_duration", durationMs=11000)])
         folder = path.with_suffix("") / "subagents"
         folder.mkdir(parents=True)
-        (folder / "agent-abc123.meta.json").write_text(json.dumps({"agentType": "Explore", "description": "테스트 확인",
+        (folder / "agent-abc123.meta.json").write_text(json.dumps({"agentType": "Explore", "description": "Check the tests",
             "toolUseId": "toolu_agent", "spawnDepth": 1, "requestShape": "foreground"}), encoding="utf-8")
         sub = folder / "agent-abc123.jsonl"
         lab.write_jsonl(sub, [lab.claude("user", 2, uuid="su", isSidechain=True, agentId="abc123",
-                                         message={"role": "user", "content": "test_calc.py를 읽고 빠진 경우를 찾아줘."})])
+                                         message={"role": "user", "content": "Read test_calc.py and find the missing cases."})])
         return path, sub
 
     def test_agent_calls_link_the_public_prompt_to_their_result(self):
@@ -86,10 +86,10 @@ class SubagentChecks(AdapterCase):
         session = claude_source.read_transcript(path)
         call, = session["agent_calls"]
         self.assertEqual((call["tool_use_id"], call["subagent_type"], call["prompt"], call["turn_index"]),
-                         ("toolu_agent", "Explore", "test_calc.py를 읽고 빠진 경우를 찾아줘.", 0))
+                         ("toolu_agent", "Explore", "Read test_calc.py and find the missing cases.", 0))
         self.assertEqual((call["status"], call["agent_id"], call["is_async"], call["result_text"]),
-                         ("completed", "abc123", False, "빈 목록 테스트가 없다."))
-        self.assertEqual(session["turns"][0]["final_text"], "리뷰 끝")
+                         ("completed", "abc123", False, "There is no test for an empty list."))
+        self.assertEqual(session["turns"][0]["final_text"], "Review done")
 
     def test_subagent_transcripts_are_read_incrementally_with_their_meta(self):
         path, sub = self.write_parent()
@@ -98,16 +98,16 @@ class SubagentChecks(AdapterCase):
         self.assertEqual((running["agent_id"], running["agent_type"], running["tool_use_id"], running["background"]),
                          ("abc123", "Explore", "toolu_agent", False))
         self.assertEqual((running["prompt"], running["status"], running["final_text"]),
-                         ("test_calc.py를 읽고 빠진 경우를 찾아줘.", "running", None))
+                         ("Read test_calc.py and find the missing cases.", "running", None))
         self.assertEqual((running["started_at"], running["last_at"], running["finished_at"]), (lab.at(2), lab.at(2), None))
         append(sub, [lab.claude("assistant", 5, uuid="st", isSidechain=True, agentId="abc123", message={
-            "id": "sw", "role": "assistant", "stop_reason": "tool_use", "content": [{"type": "text", "text": "읽는 중"}]})])
+            "id": "sw", "role": "assistant", "stop_reason": "tool_use", "content": [{"type": "text", "text": "reading"}]})])
         working, = claude_source.read_subagents(path, readers)
         self.assertEqual((working["status"], working["last_at"], working["finished_at"]), ("running", lab.at(5), None))
         append(sub, [lab.claude("assistant", 8, uuid="sa", isSidechain=True, agentId="abc123", message={
-            "id": "sm", "role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "빈 목록 테스트가 없다."}]})])
+            "id": "sm", "role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "There is no test for an empty list."}]})])
         done, = claude_source.read_subagents(path, readers)
-        self.assertEqual((done["status"], done["final_text"]), ("completed", "빈 목록 테스트가 없다."))
+        self.assertEqual((done["status"], done["final_text"]), ("completed", "There is no test for an empty list."))
         self.assertEqual((done["last_at"], done["finished_at"]), (lab.at(8), lab.at(8)))
         self.assertEqual(len(readers), 1)
         self.assertEqual(claude_source.read_subagents(self.base / "none.jsonl"), [])

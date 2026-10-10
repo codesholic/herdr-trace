@@ -30,8 +30,8 @@ REVIEWER_ID = "3f2c0000-0000-4000-8000-0000000000bb"
 LEAD_KEY, REVIEWER_KEY = f"codex:{LEAD_ID}", f"claude:{REVIEWER_ID}"
 IDS = dict(zip("ABCDEFG", ("aaaaaaaaaaa1", "bbbbbbbbbbb2", "ccccccccccc3", "ddddddddddd4", "eeeeeeeeeee5",
                            "fffffffffff6", "a1b2c3d4e5f6")))
-REVIEW_REPLY = "리뷰 결과: 문제 1건.\n- add()가 음수 입력을 검사하지 않는다."
-SECOND_REPLY = "두 번째 리뷰: 문제 없음."
+REVIEW_REPLY = "Review: one issue.\n- add() does not check for negative input."
+SECOND_REPLY = "Second review: no issues."
 
 
 def at(seconds, z=True):
@@ -86,11 +86,11 @@ def reply(uuid, seconds, body, message_id):
 def reviewer_records():
     tool = {"type": "tool_use", "id": "toolu_1", "name": "Bash", "input": {"command": "git diff"}}
     return [
-        claude("ai-title", -61, aiTitle="샌드박스 리뷰"),
-        human("u0", -60, "사람이 직접 입력한 질문", "p0"),
-        reply("a0", -50, "사람에게 한 답", "msg_0"),
+        claude("ai-title", -61, aiTitle="Sandbox review"),
+        human("u0", -60, "A question a person typed", "p0"),
+        reply("a0", -50, "The answer to the person", "msg_0"),
         claude("system", -49, uuid="s0", subtype="turn_duration", durationMs=11000),
-        human("u1", 2, pasted(text("A", "lead", "assignment", "git diff를 리뷰하고 문제만 보고해줘.")), "p1"),
+        human("u1", 2, pasted(text("A", "lead", "assignment", "Review git diff and report only the problems.")), "p1"),
         claude("assistant", 5, uuid="a1t", message={"id": "msg_1", "role": "assistant",
                "content": [{"type": "thinking", "thinking": "", "signature": "sig"}]}),
         claude("assistant", 6, uuid="a1u", message={"id": "msg_2", "role": "assistant", "stop_reason": "tool_use",
@@ -101,20 +101,20 @@ def reviewer_records():
         claude("atis-latch", 9.5),
         reply("a1", 30, REVIEW_REPLY, "msg_3"),
         claude("system", 31, uuid="s1", subtype="turn_duration", durationMs=29000),
-        claude("queue-operation", 81, operation="enqueue", content=text("E", "lead", "message", "대기열에만 남는 메시지")),
-        human("u2", 91, text("F", "lead", "assignment", "다시 리뷰해줘.\n변경 파일은 calc.py다.").replace(
-              "다시 리뷰해줘.", "다시 리뷰해줘.  "), "p2"),
-        claude("queue-operation", 95.5, operation="enqueue", content=text("G", "lead", "message", "테스트도 봐줘.")),
+        claude("queue-operation", 81, operation="enqueue", content=text("E", "lead", "message", "A message that only stays in the queue")),
+        human("u2", 91, text("F", "lead", "assignment", "Please review again.\nThe changed file is calc.py.").replace(
+              "Please review again.", "Please review again.  "), "p2"),
+        claude("queue-operation", 95.5, operation="enqueue", content=text("G", "lead", "message", "Check the tests too.")),
         claude("queue-operation", 97, operation="remove", reason="absorbed_mid_turn", deliveryId="d1",
-               commandUuid="c1", content=text("G", "lead", "message", "테스트도 봐줘.")),
+               commandUuid="c1", content=text("G", "lead", "message", "Check the tests too.")),
         claude("attachment", 97, uuid="q1", attachment={"type": "queued_command", "commandMode": "prompt",
-               "prompt": text("G", "lead", "message", "테스트도 봐줘."), "delivery_id": "d1", "source_uuid": "x1",
+               "prompt": text("G", "lead", "message", "Check the tests too."), "delivery_id": "d1", "source_uuid": "x1",
                "origin": {"kind": "human"}, "humanTurn": True, "timestamp": at(95.5)}),  # Live records keep the enqueue time.
         claude("attachment", 98, uuid="q2", attachment={"type": "queued_command", "commandMode": "task-notification",
                "prompt": "background task finished", "delivery_id": "d2", "origin": {"kind": "task-notification"}}),
         reply("a2", 99, SECOND_REPLY, "msg_4"),
         claude("system", 100, uuid="s2", subtype="turn_duration", durationMs=9000),
-        human("u3", 110, "[codex-dag msg=999999999999 from=lead kind=assignment]\n흉내 낸 머리말", "p3"),
+        human("u3", 110, "[codex-dag msg=999999999999 from=lead kind=assignment]\nAn imitated header", "p3"),
         claude("user", 112, uuid="i1", message={"role": "user", "content": [
                {"type": "text", "text": "[Request interrupted by user for tool use]"}]}),
     ]
@@ -135,15 +135,15 @@ def lead_records():
         codex("session_meta", -120, {"id": LEAD_ID, "timestamp": at(-120), "cwd": "/sandbox",
                                      "originator": "codex-tui", "source": "cli"}),
         codex("event_msg", -120, {"type": "task_started", "turn_id": "turn-1"}),
-        codex_user("x1", -119, ["<environment_context>cwd</environment_context>", "작은 변경을 만들고 리뷰를 맡겨줘."],
+        codex_user("x1", -119, ["<environment_context>cwd</environment_context>", "Make a small change and ask for a review."],
                    "turn-1"),
         codex("response_item", -100, {"type": "reasoning", "encrypted_content": "gAAAA"}),
-        codex("event_msg", 5, {"type": "task_complete", "turn_id": "turn-1", "last_agent_message": "리뷰를 맡겼다."}),
+        codex("event_msg", 5, {"type": "task_complete", "turn_id": "turn-1", "last_agent_message": "Asked for a review."}),
         codex("event_msg", 33, {"type": "task_started", "turn_id": "turn-2"}),
         codex_user("x2", 33, [text("B", "reviewer", "result", REVIEW_REPLY)], "turn-2"),
         codex("response_item", 40, {"type": "function_call_output", "call_id": "call_read",
                                     "output": "herdr agent read reviewer\n" + REVIEW_REPLY + "\n> "}),
-        codex("event_msg", 50, {"type": "task_complete", "turn_id": "turn-2", "last_agent_message": "리뷰를 반영했다."}),
+        codex("event_msg", 50, {"type": "task_complete", "turn_id": "turn-2", "last_agent_message": "Applied the review."}),
     ]
 
 
@@ -165,22 +165,22 @@ def journal_events(base):
                 "from_agent": sender, "to_agent": recipient, "outcome": result, "project_path": "/sandbox", **extra}
 
     return [
-        message("A", 1, "lead", "reviewer", "assignment", "git diff를 리뷰하고 문제만 보고해줘.",
+        message("A", 1, "lead", "reviewer", "assignment", "Review git diff and report only the problems.",
                 verification={"method": "agent_session_env", "detail": "CODEX_THREAD_ID matches"}),
         outcome("A", 1.5, "lead", "reviewer", "submitted"),
         message("B", 32, "reviewer", "lead", "result", REVIEW_REPLY, reply_to=IDS["A"]),
         outcome("B", 32.5, "reviewer", "lead", "submitted"),
-        message("C", 60, "lead", "reviewer", "assignment", "승인 대기 중에 보낸 작업"),
+        message("C", 60, "lead", "reviewer", "assignment", "Work sent while waiting on an approval"),
         outcome("C", 60.2, "lead", "reviewer", "agent_blocked", error_code="agent_blocked",
                 error_message="approval dialog"),
-        message("D", 70, "lead", "reviewer", "message", "기록에 나타나지 않는 메시지",
-                verification={"method": "declared", "detail": "세션 ID 변수가 없고 프로세스 계보를 읽지 못했다"}),
+        message("D", 70, "lead", "reviewer", "message", "A message that never shows up in the record",
+                verification={"method": "declared", "detail": "no session ID variable, and the process ancestry could not be read"}),
         outcome("D", 70.5, "lead", "reviewer", "submitted"),
-        message("E", 80, "lead", "reviewer", "message", "대기열에만 남는 메시지"),
+        message("E", 80, "lead", "reviewer", "message", "A message that only stays in the queue"),
         outcome("E", 80.5, "lead", "reviewer", "submitted"),
-        message("F", 90, "lead", "reviewer", "assignment", "다시 리뷰해줘.\n변경 파일은 calc.py다."),
+        message("F", 90, "lead", "reviewer", "assignment", "Please review again.\nThe changed file is calc.py."),
         outcome("F", 90.5, "lead", "reviewer", "submitted"),
-        message("G", 95, "lead", "reviewer", "message", "테스트도 봐줘."),
+        message("G", 95, "lead", "reviewer", "message", "Check the tests too."),
         outcome("G", 95.2, "lead", "reviewer", "submitted"),
     ]
 

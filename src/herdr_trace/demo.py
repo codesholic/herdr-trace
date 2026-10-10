@@ -58,10 +58,10 @@ def add_subagent(parent):
     """An invented running Explore subagent under the reviewer, so the demo shows a delegation line."""
     folder = parent.with_suffix("") / "subagents"
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / "agent-demo1.meta.json").write_text(json.dumps({"agentType": "Explore", "description": "테스트 빈틈 찾기",
+    (folder / "agent-demo1.meta.json").write_text(json.dumps({"agentType": "Explore", "description": "Find gaps in the tests",
         "toolUseId": "toolu_demo", "spawnDepth": 1, "requestShape": "background"}, ensure_ascii=False), encoding="utf-8")
     demo_data.write_jsonl(folder / "agent-demo1.jsonl", [demo_data.claude("user", 99.5, uuid="sd", isSidechain=True,
-        agentId="demo1", message={"role": "user", "content": "test_calc.py에서 빠진 경우를 찾아 보고해줘."})])
+        agentId="demo1", message={"role": "user", "content": "Find the cases test_calc.py misses and report them."})])
 
 
 def prepare(directory):

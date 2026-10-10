@@ -32,7 +32,7 @@ class ClaudeTranscriptChecks(LabCase):
         self.assertEqual(forms, [("user", "u0"), ("user", "u1"), ("user", "u2"), ("queued_command", "q1"),
                                  ("user", "u3")])
         self.assertEqual(self.reviewer["session_id"], lab.REVIEWER_ID)
-        self.assertEqual(self.reviewer["title"], "샌드박스 리뷰")
+        self.assertEqual(self.reviewer["title"], "Sandbox review")
         self.assertEqual(self.reviewer["record_types"]["atis-latch"], 1)
         absorbed = self.reviewer["prompts"][3]
         self.assertEqual((absorbed["delivery_id"], absorbed["turn_index"]), ("d1", 2))
@@ -40,7 +40,7 @@ class ClaudeTranscriptChecks(LabCase):
 
     def test_paste_envelope_is_read_as_its_inner_text_and_kept_as_evidence(self):
         prompt = self.reviewer["prompts"][1]
-        self.assertEqual(prompt["text"], lab.text("A", "lead", "assignment", "git diff를 리뷰하고 문제만 보고해줘."))
+        self.assertEqual(prompt["text"], lab.text("A", "lead", "assignment", "Review git diff and report only the problems."))
         self.assertEqual((prompt["envelope"]["kind"], prompt["envelope"]["id"]), ("pasted_content", "e026"))
         self.assertIsNone(self.reviewer["prompts"][0]["envelope"])
         body = "[codex-dag msg=0123456789ab from=lead kind=message]\nhi"
@@ -63,13 +63,13 @@ class ClaudeTranscriptChecks(LabCase):
 
     def test_one_reply_split_over_records_is_joined_and_partial_tail_is_left_for_later(self):
         path = Path(self.temp.name) / "split.jsonl"
-        lab.write_jsonl(path, [lab.human("u", 0, "질문", "p"), lab.reply("a", 1, "앞부분", "msg"),
-                               lab.reply("b", 2, "뒷부분", "msg"),
+        lab.write_jsonl(path, [lab.human("u", 0, "A question", "p"), lab.reply("a", 1, "First part", "msg"),
+                               lab.reply("b", 2, "second part", "msg"),
                                lab.claude("system", 3, uuid="s", subtype="turn_duration", durationMs=3)])
         with path.open("a", encoding="utf-8") as handle:
-            handle.write('{"type": "user", "message": {"content": "쓰는 중')
+            handle.write('{"type": "user", "message": {"content": "writing')
         session = claude_source.read_transcript(path)
-        self.assertEqual(session["turns"][0]["final_text"], "앞부분\n뒷부분")
+        self.assertEqual(session["turns"][0]["final_text"], "First part\nsecond part")
         self.assertEqual(len(session["prompts"]), 1)
         self.assertEqual(session["skipped_lines"], 0)
 
@@ -80,7 +80,7 @@ class CodexRolloutChecks(LabCase):
         self.assertEqual([(p["record_id"], p["turn_id"]) for p in self.lead["prompts"]], [("x1", "turn-1"), ("x2", "turn-2")])
         self.assertEqual(len(self.lead["prompts"][0]["blocks"]), 2)
         self.assertEqual([(t["turn_id"], t["status"], t["final_text"]) for t in self.lead["turns"]],
-                         [("turn-1", "completed", "리뷰를 맡겼다."), ("turn-2", "completed", "리뷰를 반영했다.")])
+                         [("turn-1", "completed", "Asked for a review."), ("turn-2", "completed", "Applied the review.")])
         self.assertEqual(self.lead["tool_outputs"][0]["record_id"], "call_read")
 
 
@@ -96,7 +96,7 @@ class DeliveryMatchChecks(LabCase):
                                   lab.IDS["F"]: "confirmed_modified", lab.IDS["G"]: "confirmed"})
         first = deliveries[0]
         envelope = {"kind": "pasted_content", "id": "e026", "prefix": "\n\n", "suffix": "\n",
-                    "recorded_length": len(lab.pasted(lab.text("A", "lead", "assignment", "git diff를 리뷰하고 문제만 보고해줘.")))}
+                    "recorded_length": len(lab.pasted(lab.text("A", "lead", "assignment", "Review git diff and report only the problems.")))}
         self.assertEqual(first["receipts"], [{"agent_key": lab.REVIEWER_KEY, "path": str(lab.reviewer_path(self.temp.name)),
                                               "record_id": "u1", "line": 5, "at": lab.at(2), "form": "user", "turn": 1,
                                               "envelope": envelope}])
@@ -156,7 +156,7 @@ class DeliveryMatchChecks(LabCase):
     def test_claude_system_inputs_start_turns_but_are_not_counted_as_a_persons_input(self):
         path = Path(self.temp.name) / "system.jsonl"
         lab.write_jsonl(path, [
-            lab.human("h", 0, "사람의 요청", "p"),
+            lab.human("h", 0, "A person's request", "p"),
             lab.claude("user", 5, uuid="t", promptId="q", origin={"kind": "task-notification", "producer": "session-task"},
                        promptSource="system", turnOrigin="task_notification",
                        message={"role": "user", "content": "<task-notification>\n<task-id>b1</task-id>\n</task-notification>"})])

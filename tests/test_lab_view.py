@@ -69,7 +69,7 @@ class BundleChecks(LabViewCase):
                          [(lab.LEAD_KEY, "lead", "codex"), (lab.REVIEWER_KEY, "reviewer", "claude")])
         self.assertEqual(bundle["agents"][0]["transcript"], str(lab.lead_path(self.temp.name)))
         self.assertEqual(bundle["agents"][1]["transcript"], str(lab.reviewer_path(self.temp.name)))
-        self.assertEqual(bundle["agents"][1]["title"], "샌드박스 리뷰")
+        self.assertEqual(bundle["agents"][1]["title"], "Sandbox review")
         lines = [(e["basis"], e["kind"], e["from_name"], e["to_name"], (e.get("delivery") or {}).get("status"))
                  for e in bundle["edges"]]
         self.assertEqual(lines, [
@@ -99,10 +99,10 @@ class BundleChecks(LabViewCase):
         bundle = self.view().build()
         lead, reviewer = bundle["agents"]
         self.assertEqual((lead["turn"]["status"], lead["turn"]["title"], lead["turn"]["count"]),
-                         ("completed", {"text": "리뷰 결과: 문제 1건.", "from": "reviewer", "kind": "result"}, 2))
+                         ("completed", {"text": "Review: one issue.", "from": "reviewer", "kind": "result"}, 2))
         # The reviewer's last turn opens with a typed fake header: it must not read as sent by lead.
         self.assertEqual((reviewer["turn"]["status"], reviewer["turn"]["title"], reviewer["turn"]["inputs"]),
-                         ("open", {"text": "흉내 낸 머리말", "unverified": True}, 1))
+                         ("open", {"text": "An imitated header", "unverified": True}, 1))
         self.assertEqual(reviewer["turn"]["started_at"], lab.at(110))
 
     def test_cards_carry_their_work_periods_for_the_time_order_view(self):
@@ -114,7 +114,7 @@ class BundleChecks(LabViewCase):
         self.assertEqual([(t["start"], t["end"], t["state"]) for t in reviewer["turns"]],
                          [(lab.at(-60), lab.at(-49), "done"), (lab.at(2), lab.at(31), "done"),
                           (lab.at(91), lab.at(100), "done"), (lab.at(110), None, "interrupted")])
-        self.assertEqual(reviewer["turns"][1]["title"], {"text": "git diff를 리뷰하고 문제만 보고해줘.", "from": "lead",
+        self.assertEqual(reviewer["turns"][1]["title"], {"text": "Review git diff and report only the problems.", "from": "lead",
                                                           "kind": "assignment"})
 
     def test_revision_is_stable_until_evidence_changes(self):
@@ -149,14 +149,14 @@ class BundleChecks(LabViewCase):
         lab.write_jsonl(old_path, [
             lab.codex("session_meta", -300, {"id": old, "timestamp": lab.at(-300), "cwd": "/sandbox", "originator": "codex-tui"}),
             lab.codex("event_msg", -300, {"type": "task_started", "turn_id": "old-1"}),
-            lab.codex_user("x0", -299, ["처음 요청"], "old-1"),
-            lab.codex("event_msg", -290, {"type": "task_complete", "turn_id": "old-1", "last_agent_message": "끝"})])
+            lab.codex_user("x0", -299, ["The first request"], "old-1"),
+            lab.codex("event_msg", -290, {"type": "task_complete", "turn_id": "old-1", "last_agent_message": "Done"})])
         records = lab.lead_records()
         records[0]["payload"]["forked_from_id"] = old
         lab.write_jsonl(lab.lead_path(self.temp.name), records)
         journal.append(self.lab["journal_file"], {"type": "agent.message", "transport": "herdr", "message_id": "a0a0a0a0a0a0",
                               "at": lab.at(-295, False), "from_agent": "lead", "to_agent": "reviewer",
-                              "message_kind": "message", "message": lab.compose("a0a0a0a0a0a0", "lead", "message", "fork 전"),
+                              "message_kind": "message", "message": lab.compose("a0a0a0a0a0a0", "lead", "message", "before the fork"),
                               "sender_agent_key": f"codex:{old}", "recipient_agent_key": lab.REVIEWER_KEY})
         bundle = self.view().build()
         self.assertEqual([a["key"] for a in bundle["agents"]], [lab.LEAD_KEY, lab.REVIEWER_KEY])
@@ -173,11 +173,11 @@ class BundleChecks(LabViewCase):
         # A freshly started Codex reports no session until its first input, so the bridge journals no recipient key.
         lab.write_jsonl(lab.lead_path(self.temp.name), lab.lead_records() + [
             lab.codex("event_msg", 200, {"type": "task_started", "turn_id": "turn-3"}),
-            lab.codex_user("x3", 200.6, [lab.compose("c0c0c0c0c0c0", "reviewer", "assignment", "새 작업")], "turn-3"),
-            lab.codex("event_msg", 210, {"type": "task_complete", "turn_id": "turn-3", "last_agent_message": "새 작업을 끝냈다."}),
+            lab.codex_user("x3", 200.6, [lab.compose("c0c0c0c0c0c0", "reviewer", "assignment", "New work")], "turn-3"),
+            lab.codex("event_msg", 210, {"type": "task_complete", "turn_id": "turn-3", "last_agent_message": "Finished the new work."}),
             lab.codex("event_msg", 220, {"type": "task_started", "turn_id": "turn-4"}),
-            lab.codex_user("x4", 220.6, [lab.compose("d0d0d0d0d0d0", "reviewer", "assignment", "다른 pane에 보낸 작업")], "turn-4"),
-            lab.codex("event_msg", 230, {"type": "task_complete", "turn_id": "turn-4", "last_agent_message": "끝."})])
+            lab.codex_user("x4", 220.6, [lab.compose("d0d0d0d0d0d0", "reviewer", "assignment", "Work sent to another pane")], "turn-4"),
+            lab.codex("event_msg", 230, {"type": "task_complete", "turn_id": "turn-4", "last_agent_message": "Done."})])
 
         def send(message_id, seconds, body, pane):
             before = {**self.lab["agents"]["lead"], "agent_session": None, "pane_id": pane}
@@ -187,8 +187,8 @@ class BundleChecks(LabViewCase):
                                   "sender_agent_key": lab.REVIEWER_KEY, "recipient_agent_key": None,
                                   "herdr": {"session": "dag-lab", "sender": self.lab["agents"]["reviewer"], "recipient_before": before}})
 
-        send("c0c0c0c0c0c0", 200, "새 작업", "w1:p1")
-        send("d0d0d0d0d0d0", 220, "다른 pane에 보낸 작업", "w9:p9")  # lead's record carries this ID, but lead was never there.
+        send("c0c0c0c0c0c0", 200, "New work", "w1:p1")
+        send("d0d0d0d0d0d0", 220, "Work sent to another pane", "w9:p9")  # lead's record carries this ID, but lead was never there.
         bundle = self.view().build()
         found = next(e for e in bundle["edges"] if e.get("message_id") == "c0c0c0c0c0c0")
         self.assertEqual((found["delivery"]["status"], found["to_key"], found["to_card"]), ("confirmed", lab.LEAD_KEY, lab.LEAD_KEY))
@@ -196,7 +196,7 @@ class BundleChecks(LabViewCase):
                          {"name": "lead", "pane_id": "w1:p1", "agent": "codex", "candidates": [lab.LEAD_KEY]})
         self.assertEqual(found["delivery"]["receipts"][0]["record_id"], "x3")
         derived = next(e for e in bundle["edges"] if e["basis"] == "derived" and e["reply_to"] == "c0c0c0c0c0c0")
-        self.assertEqual((derived["from_key"], derived["to_key"], derived["text"]), (lab.LEAD_KEY, lab.REVIEWER_KEY, "새 작업을 끝냈다."))
+        self.assertEqual((derived["from_key"], derived["to_key"], derived["text"]), (lab.LEAD_KEY, lab.REVIEWER_KEY, "Finished the new work."))
         elsewhere = next(e for e in bundle["edges"] if e.get("message_id") == "d0d0d0d0d0d0")
         self.assertEqual((elsewhere["delivery"]["status"], elsewhere["to_key"]), ("unconfirmed", None))
         self.assertEqual(elsewhere["delivery"]["recipient_resolved"]["candidates"], [])
@@ -207,7 +207,7 @@ class BundleChecks(LabViewCase):
         records = lab.reviewer_records()
         after = next(i for i, r in enumerate(records) if r.get("uuid") == "r1") + 1  # Inside turn 1 (A's assignment).
         tool = {"type": "tool_use", "id": "toolu_bg", "name": "Agent", "input": {
-            "description": "경계 사례", "prompt": "경계 사례를 점검해줘.", "subagent_type": "general-purpose", "run_in_background": True}}
+            "description": "Edge cases", "prompt": "Check the edge cases.", "subagent_type": "general-purpose", "run_in_background": True}}
         records[after:after] = [
             lab.claude("assistant", 8.5, uuid="ab", message={"id": "msg_bg", "role": "assistant", "stop_reason": "tool_use", "content": [tool]}),
             lab.claude("user", 8.6, uuid="rb", toolUseResult={"agentId": "bg1", "status": "async_launched", "isAsync": True},
@@ -216,21 +216,21 @@ class BundleChecks(LabViewCase):
         lab.write_jsonl(path, records)
         folder = path.with_suffix("") / "subagents"
         folder.mkdir(parents=True)
-        (folder / "agent-bg1.meta.json").write_text(json.dumps({"agentType": "general-purpose", "description": "경계 사례",
+        (folder / "agent-bg1.meta.json").write_text(json.dumps({"agentType": "general-purpose", "description": "Edge cases",
                                                                "toolUseId": "toolu_bg", "requestShape": "background"}), encoding="utf-8")
 
         def subagent_finishing_at(seconds):
             lab.write_jsonl(folder / "agent-bg1.jsonl", [
                 lab.claude("user", 8.7, uuid="su", isSidechain=True, agentId="bg1",
-                           message={"role": "user", "content": "경계 사례를 점검해줘."}),
+                           message={"role": "user", "content": "Check the edge cases."}),
                 lab.claude("assistant", seconds, uuid="sa", isSidechain=True, agentId="bg1", message={
-                    "id": "sm", "role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "문제 없음"}]})])
+                    "id": "sm", "role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "No problems"}]})])
             return self.view().build()
 
         late = subagent_finishing_at(40)  # The turn ended at 31, before the subagent did.
         derived = next(e for e in late["edges"] if e["id"] == "derived:" + lab.IDS["A"])
         self.assertTrue(derived["interim"])
-        self.assertEqual(derived["waiting_on"], [{"kind": "subagent", "agent_id": "bg1", "description": "경계 사례",
+        self.assertEqual(derived["waiting_on"], [{"kind": "subagent", "agent_id": "bg1", "description": "Edge cases",
                                                   "status": "completed", "finished_at": lab.at(40)}])
         self.assertFalse(next(e for e in late["edges"] if e["id"] == "derived:" + lab.IDS["F"])["interim"])
         early = subagent_finishing_at(20)  # Finished inside the turn: the last reply could report it.
@@ -243,7 +243,7 @@ class BundleChecks(LabViewCase):
             journal.append(self.lab["journal_file"], {"type": "agent.message", "transport": "herdr", "message_id": message_id,
                                   "at": lab.at(seconds, False), "from_agent": sender,
                                   "to_agent": "lead" if sender == "reviewer" else "reviewer", "message_kind": kind,
-                                  "message": lab.compose(message_id, sender, kind, "넘긴 일"), "sender_agent_key": keys[0],
+                                  "message": lab.compose(message_id, sender, kind, "Handed-off work"), "sender_agent_key": keys[0],
                                   "recipient_agent_key": keys[1], **extra})
 
         record("e0e0e0e0e0e0", 20, "reviewer", "assignment")
@@ -263,7 +263,7 @@ class BundleChecks(LabViewCase):
             journal.append(self.lab["journal_file"], {"type": "agent.message", "transport": "herdr", "message_id": message_id,
                                   "at": lab.at(seconds, False), "from_agent": sender, "message_kind": kind,
                                   "to_agent": "lead" if sender == "reviewer" else "reviewer",
-                                  "message": lab.compose(message_id, sender, kind, "넘긴 일"), "sender_agent_key": keys[0],
+                                  "message": lab.compose(message_id, sender, kind, "Handed-off work"), "sender_agent_key": keys[0],
                                   "recipient_agent_key": keys[1], **extra})
         derived = next(e for e in self.view().build()["edges"] if e["id"] == "derived:" + lab.IDS["A"])
         self.assertEqual((derived["interim"], derived["waiting_on"]), (False, []))
