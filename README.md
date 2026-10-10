@@ -2,7 +2,7 @@
 
 See what passed between your coding agents in [herdr](https://herdr.dev), and whether it arrived.
 
-> **Status: pre-alpha, not released. macOS only for now; Linux comes later.** The plan is in [docs/plan.md](docs/plan.md).
+> **Status: alpha (0.1.0), the first public version. macOS only for now; Linux comes later.** The plan is in [docs/plan.md](docs/plan.md).
 
 ![Four agents in one herdr session. An orchestrator (Claude Code) sends an implementer and a docs writer (Codex) and a verifier (Claude Code) their assignments at once; the graph puts the orchestrator above the three, and their results come back as lines. The timeline at the end shows the three working side by side.](docs/media/team.gif)
 
@@ -61,8 +61,8 @@ without a journaled header is listed as a person's input and never drawn as a me
 macOS, Python 3.11 or later.
 
 ```sh
-pipx install git+https://github.com/codesholic/herdr-trace   # once the repository is public
-pipx install /path/to/herdr-trace                             # from a local checkout
+pipx install git+https://github.com/codesholic/herdr-trace
+pipx install /path/to/herdr-trace   # from a local checkout
 ```
 
 Or run it as a herdr plugin (below); its `herdr-trace-install-command` action puts the command on PATH.
@@ -92,8 +92,8 @@ button in the top bar, and the page remembers that choice.
 ## As a herdr plugin
 
 ```sh
-herdr plugin link /path/to/herdr-trace      # a local checkout
-herdr plugin install codesholic/herdr-trace  # once the repository is public
+herdr plugin install codesholic/herdr-trace
+herdr plugin link /path/to/herdr-trace   # a local checkout
 ```
 
 Whenever herdr starts a session, the plugin serves that session's view in the background; it does nothing
@@ -114,7 +114,7 @@ herdr's plugin log shows the view's address, never its token.
 ## Limits
 
 - Checked on macOS 26 with herdr 0.9.3 (protocol 22), Codex CLI 0.159.2 and Claude Code 2.1.296, on Python
-  3.12 and 3.13. Python 3.11 is supported but not yet checked.
+  3.11, 3.12 and 3.13.
 - Codex and Claude Code transcripts, and herdr's API, are not public formats and change between versions.
   herdr-trace ignores what it does not know and says when it cannot read something.
 - Only messages sent through `herdr-trace send` are drawn between agents. Codex's default sandbox blocks
