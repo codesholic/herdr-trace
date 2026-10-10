@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,6 +33,9 @@
     .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
     .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 16px}
     .topbar h1{margin:0;font:600 17px var(--font-display);flex:1;min-width:200px}
+    .lang{height:28px;padding:0 11px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);font-size:12.5px;
+      font-weight:600;color:var(--text-2);cursor:pointer}
+    .lang:hover{border-color:var(--accent);color:var(--accent)}
     .pill{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:600;
       color:var(--muted);background:var(--surface-2);white-space:nowrap}
     .pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
@@ -199,38 +202,39 @@
 <div class="shell">
   <header class="card topbar">
     <h1>herdr-trace <span class="meta" id="session-name"></span></h1>
-    <span class="pill" id="connection" data-tone="warn"><i></i><span>연결 중</span></span>
+    <span class="pill" id="connection" data-tone="warn"><i></i><span data-i18n="connecting">Connecting</span></span>
     <span class="pill" id="herdr"><i></i><span>herdr</span></span>
     <span class="meta" id="updated"></span>
+    <button type="button" class="lang" id="lang-toggle" data-i18n-title="lang_switch_title"></button>
   </header>
   <div id="errors" hidden></div>
-  <section class="card flow" aria-label="전달 흐름">
+  <section class="card flow" data-i18n-aria="flow">
     <div class="flow-head">
-      <div class="tabs" role="tablist" aria-label="보기">
-        <button type="button" role="tab" id="tab-graph" aria-controls="graph-view">그래프</button>
-        <button type="button" role="tab" id="tab-sequence" aria-controls="sequence-view">시간 순</button>
+      <div class="tabs" role="tablist" data-i18n-aria="views">
+        <button type="button" role="tab" id="tab-graph" aria-controls="graph-view" data-i18n="tab_graph">Graph</button>
+        <button type="button" role="tab" id="tab-sequence" aria-controls="sequence-view" data-i18n="tab_sequence">Timeline</button>
       </div>
       <div class="stats" id="stats"></div>
-      <div class="legend"><label class="toggle" id="live-only-label"><input type="checkbox" id="live-only"> herdr에 있는 에이전트만<span class="meta" id="hidden-note"></span></label>
-        <label class="toggle"><input type="checkbox" id="show-derived" checked> 도출 결과 보기</label><span id="legend" class="legend"></span></div>
+      <div class="legend"><label class="toggle" id="live-only-label"><input type="checkbox" id="live-only"> <span data-i18n="live_only">Only agents in herdr</span><span class="meta" id="hidden-note"></span></label>
+        <label class="toggle"><input type="checkbox" id="show-derived" checked> <span data-i18n="show_derived">Show derived results</span></label><span id="legend" class="legend"></span></div>
     </div>
     <div class="graph-section" id="graph-view" role="tabpanel" aria-labelledby="tab-graph">
-      <div class="graph" id="graph" aria-label="협업 그래프">
+      <div class="graph" id="graph" data-i18n-aria="graph_aria">
         <div class="world" id="world"><svg class="wires" id="wires" aria-hidden="false"></svg></div>
-        <div class="graph-empty" id="graph-empty" hidden>아직 관찰한 에이전트가 없다. 저널 기록이나 herdr 연결을 기다린다.</div>
-        <div class="canvas-controls" aria-label="그래프 보기 조절">
-          <button type="button" id="zoom-out" aria-label="축소" title="축소">−</button>
+        <div class="graph-empty" id="graph-empty" hidden data-i18n="empty_agents"></div>
+        <div class="canvas-controls" data-i18n-aria="canvas_controls">
+          <button type="button" id="zoom-out" data-i18n-aria="zoom_out" data-i18n-title="zoom_out">−</button>
           <span class="zoom-label" id="zoom-label">100%</span>
-          <button type="button" id="zoom-in" aria-label="확대" title="확대">+</button>
+          <button type="button" id="zoom-in" data-i18n-aria="zoom_in" data-i18n-title="zoom_in">+</button>
           <span class="control-divider" aria-hidden="true"></span>
-          <button type="button" id="fit" aria-label="전체 그래프 맞춤" title="전체 그래프 맞춤"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4"/></svg><span class="control-text">전체 보기</span></button>
+          <button type="button" id="fit" data-i18n-aria="fit_title" data-i18n-title="fit_title"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4"/></svg><span class="control-text" data-i18n="fit">Fit</span></button>
         </div>
       </div>
-      <aside class="inspector" id="inspector" aria-label="선택한 항목 상세" aria-live="polite"></aside>
+      <aside class="inspector" id="inspector" data-i18n-aria="inspector_aria" aria-live="polite"></aside>
     </div>
     <div id="sequence-view" role="tabpanel" aria-labelledby="tab-sequence" hidden>
       <div class="sequence-body">
-        <section class="agents" id="agents" aria-label="에이전트"></section>
+        <section class="agents" id="agents" data-i18n-aria="agents_aria"></section>
         <div class="lanes" id="lanes" aria-hidden="true"></div>
         <div id="diagram"></div>
       </div>
@@ -240,20 +244,18 @@
   <section class="card detail" id="extras"></section>
   <section class="card detail settings" id="settings"></section>
 </div>
-<button type="button" class="follow" id="follow" hidden>새 전달 ↓</button>
+<button type="button" class="follow" id="follow" hidden></button>
 <script>
 "use strict";
-const KIND = {assignment: "작업 요청", message: "메시지", result: "결과"};
 const AGENT_TONE = {idle: "good", done: "good", working: "busy", blocked: "warn", unknown: ""};
-const VERIFY = {pane_env: "pane 환경변수", agent_session_env: "도구 세션 ID", process_ancestry: "프로세스 계보", declared: "자기 신고(미검증)"};
 const PENDING = new Set(["unconfirmed", "queued", "pending_busy"]);
 const TONE = {working: "var(--st-running)", running: "var(--st-running)", blocked: "var(--st-attention)", idle: "var(--st-done)",
               done: "var(--st-done)", completed: "var(--st-done)", unknown: "var(--st-unknown)", outside: "var(--st-unknown)"};
-const CATEGORY = {assignment: {label: "작업 요청", color: "var(--rel-assignment)", marker: "assignment"},
-                  result: {label: "결과", color: "var(--rel-result)", marker: "result"},
-                  message: {label: "메시지", color: "var(--rel-message)", marker: "message"},
-                  derived: {label: "결과(도출)", color: "var(--rel-result)", marker: "result"},
-                  delegation: {label: "위임", color: "var(--rel-delegation)", marker: "delegation"}};
+const CATEGORY = {assignment: {label: "kind_assignment", color: "var(--rel-assignment)", marker: "assignment"},
+                  result: {label: "kind_result", color: "var(--rel-result)", marker: "result"},
+                  message: {label: "kind_message", color: "var(--rel-message)", marker: "message"},
+                  derived: {label: "cat_derived", color: "var(--rel-result)", marker: "result"},
+                  delegation: {label: "cat_delegation", color: "var(--rel-delegation)", marker: "delegation"}};
 const W = 278, H = 158, SW = 230, SH = 104, GAP_X = 300;
 const ROW = 66, TOP = 18;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -276,6 +278,43 @@ function stored(key, value) {  // Per-viewer conveniences only; the page works w
 }
 function readJson(key) { try { return JSON.parse(stored(key) || "null"); } catch (error) { return null; } }
 const $ = (id) => document.getElementById(id);
+// Words of the page in English and Korean; data (names, messages, paths) is shown as recorded.
+const STRINGS = {"en": {"connecting": "Connecting","live": "Live","reconnecting": "Reconnecting","source_error": "Collection error: {error}","flow": "Message flow","views": "Views","tab_graph": "Graph","tab_sequence": "Timeline","live_only": "Only agents in herdr","live_only_title": "Hide the cards of sessions that left herdr, and their lines","live_only_none": "No agent is in herdr now, so everyone shows","hidden_note": " · {count} hidden","show_derived": "Show derived results","graph_aria": "Collaboration graph","empty_agents": "No agents observed yet. Waiting for journal records or a herdr connection.","canvas_controls": "Graph view controls","zoom_out": "Zoom out","zoom_in": "Zoom in","fit_title": "Fit the whole graph","fit": "Fit","inspector_aria": "Details of the selection","agents_aria": "Agents","follow": "New deliveries ↓","follow_count": "{count} new ↓","lang_switch": "한국어","lang_switch_title": "Show this page in Korean","kind_assignment": "Assignment","kind_message": "Message","kind_result": "Result","kind_result_explicit": "Result (sent)","cat_derived": "Result (derived)","cat_delegation": "Delegation","derived_with_explicit": "Result (derived · sent result exists)","derived_from_transcript": "Result (derived from the recipient's transcript)","interim_long": "Interim reply (waiting on handed-off work · not a result)","interim_group": "Interim reply (waiting on handed-off work)","interim_status": "Interim reply · waiting on handed-off work","interim_short": "Interim reply","derived_status": "Derived","derived_status_explicit": "Derived · sent result exists","sender_unverified_suffix": " · sender unverified","late_suffix": " · after {seconds} s","seconds": "{seconds} s","verify_pane_env": "pane variables","verify_agent_session_env": "tool session ID","verify_process_ancestry": "process ancestry","verify_declared": "self-declared (unverified)","st_confirmed": "Delivered","st_confirmed_modified": "Delivered (text changed)","st_queued": "Queued (not yet in the conversation)","st_pending_busy": "Sent · recipient busy (expected to arrive)","st_unconfirmed": "Sent (delivery not confirmed)","st_undelivered": "Not delivered","ag_idle": "Idle","ag_working": "Working","ag_blocked": "Waiting on approval or question","ag_done": "Done (unseen)","ag_unknown": "Can't tell","outside": "Outside herdr","outside_unknown": "Outside herdr · state unknown","not_seen": "Not visible in herdr","not_seen_unknown": "Not visible in herdr · state unknown","herdr_judged": "herdr says: {state}","herdr_judged_title": "herdr's judgement (an estimate)","rs_no_header": "No header (a person or unknown input)","rs_unknown_message": "Message ID not in the journal","rs_other_recipient": "Message ID sent to another recipient","rs_before_journal": "Recorded before the journal entry","rs_no_recipient_record": "The recipient's transcript was not found","rs_late_recipient_not_found": "The recipient had not reported its session when this was sent, and no session with the same name, tool and pane holds it","var_line_endings": "line endings CRLF→LF","var_trailing_spaces": "trailing spaces removed","var_outer_whitespace": "outer whitespace removed","unverified_header": "Unverified header","herdr_ok": "herdr {version} · protocol {protocol}","herdr_unavailable": "herdr not connected","herdr_not_configured": "herdr not queried","herdr_protocol_mismatch": "herdr protocol {protocol} (check)","herdr_unknown": "herdr state unknown","feed_subscribed": "events","feed_reconnecting": "reconnecting · polling","feed_polling": "polling","events_detail": "events: {detail}","events_seen": "{count} events received","updated": "{count} journal events · updated {time}","stat_blocked": "Awaiting response","stat_confirmed": "Delivered","stat_moving": "In transit","stat_undelivered": "Not delivered","stat_unverified": "Sender unverified","stat_human": "Human input","web_title": "Opens pane {pane} of {name} in herdr web ui, in the web ui tab this page opened if there is one. The web ui must serve the herdr session this page reads, or another pane with the same ID opens.","an_agent": "the agent","web_respond": "Respond ↗","web_open_pane": "Open this pane in herdr web ui ↗","sub_badge": "Sub","subagent": "Subagent","sub_completed": "Done","sub_running": "Running","sub_unknown": "Unknown","no_description": "No description","background_prefix": "Background · ","no_turn_yet": "No turn recorded yet","turn_running": "Turn running {elapsed}","turn_open_in_record": "A turn started {time} is still open in the record","turn_ended": "Ended {time} · {count} turns","no_name": "(no name)","now_prefix": "Now","last_prefix": "Last","no_turn_record": "No turn record","sent_n": "sent {count}","received_n": "received {count}","moving_n": "in transit {count}","sessions_n": "{count} sessions","hours_minutes": "{hours}h {minutes}m","minutes": "{minutes} min","delegation_label": "Delegation · {state}","group_moving": "{count} in transit","group_undelivered": "{count} not delivered","group_unverified": "{count} unverified","f_sender": "Sender","f_recipient": "Recipient","f_kind": "Kind","f_basis": "Basis","basis_derived": "Derived (the recipient turn's last reply)","basis_journal": "Sent (bridge journal)","f_time": "Time","f_message_id": "Message ID","f_reply_to": "Answers","p_journal": "Journal · seq {seq}","f_recorded_at": "Recorded","f_sender_check": "Sender check","no_record_old_bridge": "Not recorded (earlier bridge)","p_outcome": "Send outcome · {outcome}","no_record": "No record","f_seq": "seq","f_error_code": "Error code","f_error_message": "Error","no_outcome_yet": "No send outcome yet.","p_receipt": "Receipt · {status}","duplicates": " · {count} duplicates","receipt_missing": "This message ID was not found in the recipient's transcript.","f_recipient_at_send": "Recipient when sent","f_latency": "Until delivered","f_recipient_session": "Recipient session","resolved_found": "Not reported when sent · found by message ID in {count} sessions with the same name ({name}), tool ({agent}) and pane ({pane})","resolved_missing": "Not reported when sent · not found in {count} sessions with the same name ({name}), tool ({agent}) and pane ({pane})","f_variation": "Text change","equal_after": "Equal after {step}","first_difference": "First difference at {offset}","f_lengths": "Length (sent/received)","f_queue": "Queue record","line_at": "line {line} · {time}","interim_banner": "This turn ended before the work it handed off (a background subagent or an assignment sent to another agent) came back. Its last reply reports progress; it is not the result.","p_derived": "Derivation","f_waited_on": "Waited on","waited_agent": "Assignment {id} to {to} · {answer}","answered_at": "result arrived {time}","no_result": "no result","waited_sub": "Subagent {name} · {state}","ended_at": "ended {time}","f_record": "Transcript","f_turn": "Turn","f_final_record": "Final reply record","f_end_record": "Turn end record","f_from_absorbed": "Started from input absorbed mid-turn","absorbed_yes": "Yes (may be mixed with other input)","f_other_inputs": "Other inputs in the same turn","other_inputs_n": "{count} · the reply may answer them too","none": "None","f_explicit": "Sent result","explicit_default": "{id} (the default result path)","explicit_none_interim": "None · this is an interim reply, so there is no result evidence yet","explicit_none_only": "None · this derived result is the only result evidence","p_readback": "Read by the sender · {state}","confirmed_word": "confirmed","unconfirmed_word": "not confirmed","f_tool_output": "Tool output","f_line": "Line","readback_missing": "The sender's tool outputs do not contain this reply.","f_description": "Description","f_state": "State","f_background": "Background","yes": "Yes","no": "No","f_started": "Started","f_last_record": "Last record","f_finished": "Finished","f_agent_call": "Agent call","s_delegation_text": "Delegated prompt","s_final_reply": "Final reply","not_yet": "Not yet","blocked_banner": "herdr judges that this agent waits on an approval or a question (an estimate). This page does not answer; respond in herdr or herdr web ui.","f_current_turn": "Current turn","turn_state_running": "Running","turn_state_ended": "Ended","f_turn_start": "Turn started","f_turn_end": "Turn ended","f_turns": "Turns","f_session": "Session","f_pane": "pane","f_claude_run": "Claude process","exited": " (exited)","f_earlier_sessions": "Earlier sessions","f_deliveries": "Deliveries","deliveries_counts": "sent {sent} · received {received} · in transit {moving}","s_related": "{count} deliveries in and out","p_human_inputs": "{count} human inputs (not drawn as lines)","s_subagent_title": "Subagent · {type}","missing_selection": "The selection is not in the current bundle","recent": "Recent activity","recent_hint": "Click a line or a card for its text and evidence. Drag to move, scroll to zoom.","no_messages": "No message sent through the bridge yet.","f_title": "Title","not_found": "Not found","fork_suffix": "{id} → fork","subagents_n": "{count} subagents","background_suffix": " · background","now_at": "Now {time}","quiet_band": "⋯ quiet for {span} ⋯","span_now": "{start}–now","span_open": "{start}– (not closed in the record)","inputs_n": " · {count} inputs","missing_line": "The selected line is not in the current bundle","pick_line": "Click a line for its text and evidence","f_form": "Form","form_absorbed": "Absorbed mid-turn (queued_command)","f_entered": "Entered the conversation","entered_value": "{time} (from the queue into the running turn)","f_reason": "Reason","f_envelope": "Recorded as","envelope_value": "Wrapped by the receiving tool ({kind} id={id}) · compared by the inner text","p_unattributed": "Inputs not drawn as agent lines · {count}","p_unreported": "herdr agents that reported no session · {count}","src_option": "launch option","src_saved": "saved","src_default": "default","src_none": "not set","session_label": "session {name}","settings_failed": "Could not read the source settings: {error}","s_herdr_session": "herdr session name","s_herdr_session_placeholder": "e.g. work","s_herdr_socket": "herdr socket path (optional, wins over the session name)","s_herdr_socket_placeholder": "~/.config/herdr/sessions/<name>/herdr.sock","s_claude_dir": "Claude Code data folder","s_web_url": "herdr web ui address (optional · cards then open the agent's pane)","socket_now": "herdr socket in use: {socket} · {exists} · {source}","socket_none": "none","socket_exists": "present","socket_missing": "missing (the session may be off)","socket_not_queried": "herdr is not queried","claude_now": "Claude folder: {dir} · {source}","fixed_note": " · values set by launch options cannot be changed here","web_now": "herdr web ui links: {value}","off": "off","on": "on","web_note": "herdr web ui serves only the one herdr session that started it, and pane IDs (w1:p2 and so on) repeat across sessions. Enter the address only when the web ui serves the herdr session above; otherwise another pane with the same ID opens.","save": "Save","saved_note": "Saved. The next update reads with the new settings.","save_failed": "Could not save: {error}","settings_summary": "Source settings · herdr {herdr} · web ui links {web}","socket_given": "socket given"},"ko": {"connecting": "연결 중","live": "실시간","reconnecting": "다시 연결 중","source_error": "수집 오류: {error}","flow": "전달 흐름","views": "보기","tab_graph": "그래프","tab_sequence": "시간 순","live_only": "herdr에 있는 에이전트만","live_only_title": "herdr 밖으로 나간 세션의 카드와 그 선을 숨긴다","live_only_none": "지금 herdr에 있는 에이전트가 없어 모두 보인다","hidden_note": " · {count}개 숨김","show_derived": "도출 결과 보기","graph_aria": "협업 그래프","empty_agents": "아직 관찰한 에이전트가 없다. 저널 기록이나 herdr 연결을 기다린다.","canvas_controls": "그래프 보기 조절","zoom_out": "축소","zoom_in": "확대","fit_title": "전체 그래프 맞춤","fit": "전체 보기","inspector_aria": "선택한 항목 상세","agents_aria": "에이전트","follow": "새 전달 ↓","follow_count": "새 전달 {count}건 ↓","lang_switch": "English","lang_switch_title": "이 화면을 영어로 보기","kind_assignment": "작업 요청","kind_message": "메시지","kind_result": "결과","kind_result_explicit": "결과(명시 전송)","cat_derived": "결과(도출)","cat_delegation": "위임","derived_with_explicit": "결과(도출 · 명시 결과 있음)","derived_from_transcript": "결과(수신 세션 기록에서 도출)","interim_long": "중간 응답(맡긴 일 대기 · 결과 아님)","interim_group": "중간 응답(맡긴 일 대기)","interim_status": "중간 응답 · 맡긴 일 대기","interim_short": "중간 응답","derived_status": "도출","derived_status_explicit": "도출 · 명시 결과 있음","sender_unverified_suffix": " · 보낸 쪽 미검증","late_suffix": " · {seconds}초 뒤","seconds": "{seconds}초","verify_pane_env": "pane 환경변수","verify_agent_session_env": "도구 세션 ID","verify_process_ancestry": "프로세스 계보","verify_declared": "자기 신고(미검증)","st_confirmed": "전달 확인","st_confirmed_modified": "전달 확인(본문 변형)","st_queued": "대기열 접수(대화 진입 미확인)","st_pending_busy": "보냄 · 상대 작업 중(도착 대기 예상)","st_unconfirmed": "보냄(전달 미확인)","st_undelivered": "미전달","ag_idle": "대기","ag_working": "작업 중","ag_blocked": "승인·질문 대기","ag_done": "완료(미확인)","ag_unknown": "판정 불가","outside": "herdr 밖","outside_unknown": "herdr 밖 · 상태 미확인","not_seen": "herdr에서 보이지 않음","not_seen_unknown": "herdr에서 보이지 않음 · 상태 미확인","herdr_judged": "herdr 판정: {state}","herdr_judged_title": "herdr 판정(추정)","rs_no_header": "머리말 없음(사람 또는 알 수 없는 입력)","rs_unknown_message": "저널에 없는 메시지 ID","rs_other_recipient": "다른 수신자에게 보낸 메시지 ID","rs_before_journal": "저널 기록보다 먼저 기록된 입력","rs_no_recipient_record": "수신 세션 기록을 찾지 못했다","rs_late_recipient_not_found": "보낼 때 받는 쪽 세션이 보고되지 않았고, 같은 이름·도구·pane의 세션 기록에서도 찾지 못했다","var_line_endings": "줄바꿈 CRLF→LF","var_trailing_spaces": "줄 끝 공백 제거","var_outer_whitespace": "앞뒤 공백 제거","unverified_header": "확인 안 된 머리말","herdr_ok": "herdr {version} · protocol {protocol}","herdr_unavailable": "herdr 연결 안 됨","herdr_not_configured": "herdr 조회 안 함","herdr_protocol_mismatch": "herdr protocol {protocol} (확인 필요)","herdr_unknown": "herdr 상태 미확인","feed_subscribed": "이벤트 구독","feed_reconnecting": "재연결 중 · 조회만","feed_polling": "조회만","events_detail": "이벤트: {detail}","events_seen": "받은 이벤트 {count}개","updated": "저널 이벤트 {count}개 · {time} 갱신","stat_blocked": "응답 대기","stat_confirmed": "전달 확인","stat_moving": "이동 중","stat_undelivered": "미전달","stat_unverified": "보낸 쪽 미검증","stat_human": "사람 입력","web_title": "{name}의 pane {pane}을 herdr web ui에서 연다. 이 화면에서 연 web ui 탭이 있으면 그 탭에서 연다. web ui가 이 화면이 읽는 herdr 세션에 붙어 있어야 같은 pane이다.","an_agent": "에이전트","web_respond": "응답하러 가기 ↗","web_open_pane": "herdr web ui에서 이 pane 열기 ↗","sub_badge": "서브","subagent": "서브에이전트","sub_completed": "완료","sub_running": "진행 중","sub_unknown": "확인 불가","no_description": "설명 없음","background_prefix": "백그라운드 · ","no_turn_yet": "아직 턴 기록이 없다","turn_running": "턴 진행 {elapsed}","turn_open_in_record": "{time} 시작한 턴이 기록상 열려 있음","turn_ended": "{time} 끝남 · 턴 {count}개","no_name": "(이름 없음)","now_prefix": "지금","last_prefix": "마지막","no_turn_record": "턴 기록 없음","sent_n": "보냄 {count}","received_n": "받음 {count}","moving_n": "이동 중 {count}","sessions_n": "세션 {count}개","hours_minutes": "{hours}시간 {minutes}분","minutes": "{minutes}분","delegation_label": "위임 · {state}","group_moving": "{count} 이동 중","group_undelivered": "{count} 미전달","group_unverified": "미검증 {count}","f_sender": "보낸 쪽","f_recipient": "받는 쪽","f_kind": "종류","f_basis": "근거 종류","basis_derived": "도출(받는 세션의 턴 최종 응답)","basis_journal": "명시(래퍼 저널)","f_time": "시각","f_message_id": "메시지 ID","f_reply_to": "답하는 메시지","p_journal": "저널 · seq {seq}","f_recorded_at": "기록 시각","f_sender_check": "보낸 쪽 확인","no_record_old_bridge": "기록 없음(이전 래퍼)","p_outcome": "전송 결과 · {outcome}","no_record": "기록 없음","f_seq": "seq","f_error_code": "오류 코드","f_error_message": "오류 내용","no_outcome_yet": "전송 결과 이벤트가 아직 없다.","p_receipt": "수신 기록 · {status}","duplicates": " · 중복 {count}건","receipt_missing": "받는 세션 기록에서 이 메시지 ID를 찾지 못했다.","f_recipient_at_send": "보낼 때 받는 쪽 상태","f_latency": "전달까지","f_recipient_session": "받는 쪽 세션","resolved_found": "보낼 때 보고되지 않음 · 같은 이름({name})·도구({agent})·pane({pane})의 세션 {count}개에서 메시지 ID로 찾음","resolved_missing": "보낼 때 보고되지 않음 · 같은 이름({name})·도구({agent})·pane({pane})의 세션 {count}개에서 찾지 못함","f_variation": "본문 변형","equal_after": "{step} 후 같음","first_difference": "첫 차이 위치 {offset}","f_lengths": "길이(보냄/받음)","f_queue": "대기열 기록","line_at": "줄 {line} · {time}","interim_banner": "이 턴은 맡긴 일(백그라운드 서브에이전트나 다른 에이전트에게 보낸 작업 요청)이 돌아오기 전에 끝났다. 마지막 응답은 진행 상황을 알린 중간 응답이고 결과가 아니다.","p_derived": "도출 근거","f_waited_on": "기다린 일","waited_agent": "{to}에게 보낸 작업 요청 {id} · {answer}","answered_at": "{time} 결과 도착","no_result": "결과 없음","waited_sub": "서브에이전트 {name} · {state}","ended_at": "{time} 끝남","f_record": "기록","f_turn": "턴","f_final_record": "최종 응답 record","f_end_record": "턴 종료 record","f_from_absorbed": "작업 중 흡수 입력에서 시작","absorbed_yes": "예(다른 입력과 섞였을 수 있음)","f_other_inputs": "같은 턴의 다른 입력","other_inputs_n": "{count}건 · 응답이 그 입력에도 답했을 수 있다","none": "없음","f_explicit": "명시 결과","explicit_default": "{id} (기본 결과 경로)","explicit_none_interim": "없음 · 이 응답은 중간 응답이라 결과 근거가 아직 없다","explicit_none_only": "없음 · 이 도출 결과가 유일한 결과 근거","p_readback": "보낸 쪽 수신 · {state}","confirmed_word": "확인","unconfirmed_word": "미확인","f_tool_output": "도구 출력","f_line": "줄","readback_missing": "보낸 쪽 기록의 도구 출력에서 이 응답 원문을 찾지 못했다.","f_description": "설명","f_state": "상태","f_background": "백그라운드","yes": "예","no": "아니오","f_started": "시작","f_last_record": "마지막 기록","f_finished": "끝남","f_agent_call": "Agent 호출","s_delegation_text": "위임 원문","s_final_reply": "최종 응답","not_yet": "아직 없음","blocked_banner": "herdr가 승인이나 질문을 기다린다고 판정했다(추정). 이 화면은 답하지 않는다. herdr나 herdr web ui에서 응답한다.","f_current_turn": "지금 턴","turn_state_running": "진행 중","turn_state_ended": "끝남","f_turn_start": "턴 시작","f_turn_end": "턴 종료","f_turns": "턴 수","f_session": "세션","f_pane": "pane","f_claude_run": "Claude 실행","exited": " (종료됨)","f_earlier_sessions": "이전 세션","f_deliveries": "전달","deliveries_counts": "보냄 {sent} · 받음 {received} · 이동 중 {moving}","s_related": "주고받은 전달 {count}건","p_human_inputs": "사람 입력 {count}건(선으로 그리지 않음)","s_subagent_title": "서브에이전트 · {type}","missing_selection": "선택한 항목이 지금 묶음에 없다","recent": "최근 활동","recent_hint": "선이나 카드를 누르면 원문과 근거를 보여 준다. 끌어서 이동하고 휠로 확대·축소한다.","no_messages": "아직 래퍼로 보낸 메시지가 없다.","f_title": "제목","not_found": "찾지 못함","fork_suffix": "{id} → fork","subagents_n": "서브에이전트 {count}개","background_suffix": " · 백그라운드","now_at": "지금 {time}","quiet_band": "⋯ {span} 조용함 ⋯","span_now": "{start}–지금","span_open": "{start}– (기록상 닫히지 않음)","inputs_n": " · 입력 {count}건","missing_line": "선택한 선이 지금 묶음에 없다","pick_line": "선을 누르면 원문과 근거를 보여 준다","f_form": "형태","form_absorbed": "작업 중 흡수(queued_command)","f_entered": "대화 진입","entered_value": "{time} (대기열에서 진행 중인 턴으로)","f_reason": "사유","f_envelope": "기록 형태","envelope_value": "받는 도구가 감싸서 기록({kind} id={id}) · 안쪽 본문으로 비교","p_unattributed": "에이전트 선으로 그리지 않은 입력 · {count}건","p_unreported": "세션을 보고하지 않은 herdr 에이전트 · {count}","src_option": "실행 옵션","src_saved": "저장값","src_default": "기본값","src_none": "지정 안 됨","session_label": "세션 {name}","settings_failed": "소스 설정을 읽지 못했다: {error}","s_herdr_session": "herdr 세션 이름","s_herdr_session_placeholder": "예: work","s_herdr_socket": "herdr 소켓 경로(선택, 세션 이름보다 우선)","s_herdr_socket_placeholder": "~/.config/herdr/sessions/<이름>/herdr.sock","s_claude_dir": "Claude Code 데이터 폴더","s_web_url": "herdr web ui 주소(선택 · 넣으면 카드에서 그 에이전트의 pane을 바로 연다)","socket_now": "지금 쓰는 herdr 소켓: {socket} · {exists} · {source}","socket_none": "없음","socket_exists": "있음","socket_missing": "없음(세션이 꺼져 있을 수 있다)","socket_not_queried": "herdr를 조회하지 않는다","claude_now": "Claude 폴더: {dir} · {source}","fixed_note": " · 실행 옵션으로 정한 값은 여기서 바꿀 수 없다","web_now": "herdr web ui 링크: {value}","off": "꺼짐","on": "켜짐","web_note": "herdr web ui는 자기를 처음 띄운 herdr 세션 하나에만 붙는다. pane ID(w1:p2 등)는 세션마다 겹치므로, web ui가 위 herdr 세션에 붙어 있을 때만 주소를 넣는다. 다른 세션에 붙어 있으면 같은 ID의 다른 pane이 열린다.","save": "저장","saved_note": "저장했다. 다음 갱신부터 새 설정으로 읽는다.","save_failed": "저장하지 못했다: {error}","settings_summary": "소스 설정 · herdr {herdr} · web ui 링크 {web}","socket_given": "소켓 지정"}};
+let chosenLang = ["en", "ko"].includes(stored("lang")) ? stored("lang") : null;  // The viewer's own choice wins.
+let lang = chosenLang || "en";
+function t(key, vars = {}) {
+  const text = (STRINGS[lang] || {})[key] ?? STRINGS.en[key] ?? key;
+  return text.replace(/\{(\w+)\}/g, (_, name) => vars[name] ?? "");
+}
+const kindName = (kind) => STRINGS.en["kind_" + kind] ? t("kind_" + kind) : kind;
+const statusName = (status) => STRINGS.en["st_" + status] ? t("st_" + status) : status;
+const agentState = (status) => t("ag_" + (STRINGS.en["ag_" + status] ? status : "unknown"));
+const subState = (status) => t({completed: "sub_completed", running: "sub_running"}[status] || "sub_unknown");
+function titleText(title) {  // A turn title arrives as parts; a bridge header is worded here.
+  if (!title || typeof title === "string") return title || "";
+  if (title.from) return `${title.from} · ${kindName(title.kind)} · ${title.text}`;
+  return title.unverified ? `${t("unverified_header")} · ${title.text}` : title.text;
+}
+function applyStatic() {
+  document.documentElement.lang = lang;
+  for (const node of document.querySelectorAll("[data-i18n]")) node.textContent = t(node.dataset.i18n);
+  for (const node of document.querySelectorAll("[data-i18n-aria]")) node.setAttribute("aria-label", t(node.dataset.i18nAria));
+  for (const node of document.querySelectorAll("[data-i18n-title]")) node.title = t(node.dataset.i18nTitle);
+  $("lang-toggle").textContent = t("lang_switch");
+  if (!$("follow").hidden && unseen) $("follow").textContent = t("follow_count", {count: unseen});
+  else $("follow").textContent = t("follow");
+}
+function setLang(next, remember) {
+  lang = next;
+  if (remember) { chosenLang = next; stored("lang", next); }  // From now on the server's default no longer applies.
+  applyStatic();
+  const pill = $("connection");
+  if (pill.dataset.key) pill.querySelector("span").textContent = t(pill.dataset.key, JSON.parse(pill.dataset.vars || "{}"));
+  shownInspector = shownDetail = null;  // Panels cache by data; new words need a redraw.
+  renderLegend();
+  if (bundle) render();
+  renderSettings();
+}
 function el(tag, attrs = {}, ...children) {
   const node = SVG_TAGS.has(tag) ? document.createElementNS("http://www.w3.org/2000/svg", tag) : document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
@@ -297,7 +336,8 @@ const providerName = (p) => ({codex: "Codex", claude: "Claude Code"})[p] || p;
 const time = (iso) => { const d = new Date(iso); return isNaN(d) ? 0 : d.getTime(); };
 function elapsed(since) {
   const seconds = Math.max(0, Math.round((Date.now() - time(since)) / 1000));
-  return seconds >= 3600 ? `${Math.floor(seconds / 3600)}시간 ${Math.floor(seconds % 3600 / 60)}분` : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  return seconds >= 3600 ? t("hours_minutes", {hours: Math.floor(seconds / 3600), minutes: Math.floor(seconds % 3600 / 60)})
+    : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 function phase(node) {  // A redrawn or newly working card joins the shared rhythm instead of restarting it.
@@ -313,17 +353,17 @@ function webLink(agent, cls, text) {  // herdr web ui opens the pane; this page 
   // the user's own local app. The page already sends no referrer.
   return el("a", {class: `${cls}${agent.status === "blocked" ? " attention" : ""}`, href: agent.web_link, target: "herdr-web-ui",
     referrerpolicy: "no-referrer",
-    title: `${agent.name || "에이전트"}의 pane ${agent.pane_id}을 herdr web ui에서 연다. 이 화면에서 연 web ui 탭이 있으면 그 탭에서 연다. web ui가 이 화면이 읽는 herdr 세션에 붙어 있어야 같은 pane이다.`,
-    text: text || (agent.status === "blocked" ? "응답하러 가기 ↗" : "herdr web ui ↗")});
+    title: t("web_title", {name: agent.name || t("an_agent"), pane: agent.pane_id}),
+    text: text || (agent.status === "blocked" ? t("web_respond") : "herdr web ui ↗")});
 }
 
 function edgeLabel(edge) {
-  if (edge.basis === "derived" && edge.interim) return "중간 응답(맡긴 일 대기 · 결과 아님)";
-  if (edge.basis === "derived") return edge.explicit_result ? "결과(도출 · 명시 결과 있음)" : "결과(수신 세션 기록에서 도출)";
-  const kind = edge.kind === "result" ? "결과(명시 전송)" : (KIND[edge.kind] || edge.kind);
-  const unverified = edge.sender_verification && edge.sender_verification.method === "declared" ? " · 보낸 쪽 미검증" : "";
-  const late = edge.delivery.latency_seconds >= 5 ? ` · ${Math.round(edge.delivery.latency_seconds)}초 뒤` : "";
-  return `${kind} · ${edge.delivery.label}${late}${unverified}`;
+  if (edge.basis === "derived" && edge.interim) return t("interim_long");
+  if (edge.basis === "derived") return edge.explicit_result ? t("derived_with_explicit") : t("derived_from_transcript");
+  const kind = edge.kind === "result" ? t("kind_result_explicit") : kindName(edge.kind);
+  const unverified = edge.sender_verification && edge.sender_verification.method === "declared" ? t("sender_unverified_suffix") : "";
+  const late = edge.delivery.latency_seconds >= 5 ? t("late_suffix", {seconds: Math.round(edge.delivery.latency_seconds)}) : "";
+  return `${kind} · ${statusName(edge.delivery.status)}${late}${unverified}`;
 }
 function edgeStyle(edge) {
   const color = `var(--rel-${edge.kind === "assignment" ? "assignment" : edge.kind === "result" ? "result" : "message"})`;
@@ -339,14 +379,14 @@ function edgeStyle(edge) {
 function renderTop() {
   const herdr = bundle.herdr || {};
   const pill = $("herdr");
-  const text = {ok: `herdr ${herdr.version || ""} · protocol ${herdr.protocol}`, unavailable: "herdr 연결 안 됨",
-                not_configured: "herdr 조회 안 함", protocol_mismatch: `herdr protocol ${herdr.protocol} (확인 필요)`}[herdr.status] || "herdr 상태 미확인";
+  const text = {ok: t("herdr_ok", {version: herdr.version || "", protocol: herdr.protocol}), unavailable: t("herdr_unavailable"),
+                not_configured: t("herdr_not_configured"), protocol_mismatch: t("herdr_protocol_mismatch", {protocol: herdr.protocol})}[herdr.status] || t("herdr_unknown");
   pill.dataset.tone = {ok: "good", unavailable: "bad", protocol_mismatch: "warn"}[herdr.status] || "";
   const events = herdr.events || {};
-  const feed = {subscribed: "이벤트 구독", reconnecting: "재연결 중 · 조회만", off: "조회만", disabled: "조회만"}[events.state];
+  const feed = {subscribed: t("feed_subscribed"), reconnecting: t("feed_reconnecting"), off: t("feed_polling"), disabled: t("feed_polling")}[events.state];
   pill.querySelector("span").textContent = herdr.status === "ok" && feed ? `${text} · ${feed}` : text;
-  pill.title = [herdr.detail || herdr.socket || "", events.detail ? `이벤트: ${events.detail}` : "", events.seen ? `받은 이벤트 ${events.seen}개` : ""].filter(Boolean).join("\n");
-  $("updated").textContent = `저널 이벤트 ${bundle.journal_events}개 · ${when(bundle.generated_at)} 갱신`;
+  pill.title = [herdr.detail || herdr.socket || "", events.detail ? t("events_detail", {detail: events.detail}) : "", events.seen ? t("events_seen", {count: events.seen}) : ""].filter(Boolean).join("\n");
+  $("updated").textContent = t("updated", {count: bundle.journal_events, time: when(bundle.generated_at)});
   const errors = $("errors");
   errors.hidden = !bundle.errors.length;
   errors.replaceChildren(...bundle.errors.map((e) => el("div", {class: "banner", text: e})));
@@ -354,19 +394,19 @@ function renderTop() {
   const count = (test) => journal.filter(test).length;
   const stat = (label, value, tone) => el("span", {class: value ? tone || "" : ""}, label, " ", el("b", {text: String(value)}));
   $("stats").replaceChildren(
-    stat("응답 대기", bundle.agents.filter((a) => a.live && a.status === "blocked").length, "warn"),
-    stat("전달 확인", count((e) => e.delivery.status.startsWith("confirmed"))),
-    stat("이동 중", count((e) => PENDING.has(e.delivery.status)), "busy"),
-    stat("미전달", count((e) => e.delivery.status === "undelivered"), "bad"),
-    stat("보낸 쪽 미검증", count((e) => (e.sender_verification || {}).method === "declared"), "warn"),
-    stat("사람 입력", bundle.unattributed.length));
+    stat(t("stat_blocked"), bundle.agents.filter((a) => a.live && a.status === "blocked").length, "warn"),
+    stat(t("stat_confirmed"), count((e) => e.delivery.status.startsWith("confirmed"))),
+    stat(t("stat_moving"), count((e) => PENDING.has(e.delivery.status)), "busy"),
+    stat(t("stat_undelivered"), count((e) => e.delivery.status === "undelivered"), "bad"),
+    stat(t("stat_unverified"), count((e) => (e.sender_verification || {}).method === "declared"), "warn"),
+    stat(t("stat_human"), bundle.unattributed.length));
 }
 function renderLegend() {
   const item = (label, color, dash) => el("span", {}, el("svg", {viewBox: "0 0 26 8"},
     el("line", {x1: 0, x2: 26, y1: 4, y2: 4, stroke: color, "stroke-width": 2, "stroke-dasharray": dash})), label);
-  $("legend").replaceChildren(item("작업 요청", "var(--rel-assignment)"), item("결과", "var(--rel-result)"),
-    item("결과(도출)", "var(--rel-result)", "7 5"), item("메시지", "var(--rel-message)"), item("위임", "var(--rel-delegation)"),
-    item("이동 중", "var(--st-running)", "6 8"), item("미전달", "var(--st-failed)", "2 4"));
+  $("legend").replaceChildren(item(t("kind_assignment"), "var(--rel-assignment)"), item(t("kind_result"), "var(--rel-result)"),
+    item(t("cat_derived"), "var(--rel-result)", "7 5"), item(t("kind_message"), "var(--rel-message)"), item(t("cat_delegation"), "var(--rel-delegation)"),
+    item(t("stat_moving"), "var(--st-running)", "6 8"), item(t("stat_undelivered"), "var(--st-failed)", "2 4"));
 }
 
 // ---------- graph model ----------
@@ -381,8 +421,8 @@ function renderFilter() {
   const live = bundle.agents.filter((agent) => agent.live).length, hidden = bundle.agents.length - shownAgents().length;
   $("live-only").checked = liveOnly;
   $("live-only").disabled = !live;
-  $("live-only-label").title = live ? "herdr 밖으로 나간 세션의 카드와 그 선을 숨긴다" : "지금 herdr에 있는 에이전트가 없어 모두 보인다";
-  $("hidden-note").textContent = hidden ? ` · ${hidden}개 숨김` : "";
+  $("live-only-label").title = live ? t("live_only_title") : t("live_only_none");
+  $("hidden-note").textContent = hidden ? t("hidden_note", {count: hidden}) : "";
 }
 function buildModel() {
   const cards = shownAgents().map((agent) => ({key: agent.key, agent}));
@@ -462,28 +502,29 @@ function nodeContent(card) {
   if (card.subagent) {
     const sub = card.subagent, status = sub.status === "completed" ? "completed" : sub.status === "running" ? "running" : "unknown";
     return {status, tone: TONE[status], outside: false, parts: [
-      el("div", {class: "node-head"}, el("span", {class: "node-dot"}), el("span", {class: "node-tool", "data-provider": "sub", text: "서브"}),
-        el("span", {class: "node-title", text: sub.agent_type || "서브에이전트"}),
-        el("span", {class: "node-state", text: {completed: "완료", running: "진행 중"}[status] || "확인 불가"})),
-      el("div", {class: "node-role", text: sub.description || sub.prompt || "설명 없음"}),
-      el("div", {class: "node-foot", text: `${sub.background ? "백그라운드 · " : ""}${short(sub.agent_id)}`})]};
+      el("div", {class: "node-head"}, el("span", {class: "node-dot"}), el("span", {class: "node-tool", "data-provider": "sub", text: t("sub_badge")}),
+        el("span", {class: "node-title", text: sub.agent_type || t("subagent")}),
+        el("span", {class: "node-state", text: subState(status)})),
+      el("div", {class: "node-role", text: sub.description || sub.prompt || t("no_description")}),
+      el("div", {class: "node-foot", text: `${sub.background ? t("background_prefix") : ""}${short(sub.agent_id)}`})]};
   }
   const agent = card.agent, turn = agent.turn || {}, counts = cardCounts(card.key);
   const status = agent.live ? agent.status || "unknown" : "outside";
-  const timeLine = !turn.started_at ? el("div", {class: "node-time", text: "아직 턴 기록이 없다"})
+  const timeLine = !turn.started_at ? el("div", {class: "node-time", text: t("no_turn_yet")})
     : turn.status === "open" && agent.live && agent.status === "working"
-      ? el("div", {class: "node-time", "data-since": turn.started_at, text: `턴 진행 ${elapsed(turn.started_at)}`})
-    : turn.status === "open" ? el("div", {class: "node-time", text: `${when(turn.started_at)} 시작한 턴이 기록상 열려 있음`})
-    : el("div", {class: "node-time", text: `${when(turn.finished_at || turn.started_at)} 끝남 · 턴 ${turn.count}개`});
+      ? el("div", {class: "node-time", "data-since": turn.started_at, text: t("turn_running", {elapsed: elapsed(turn.started_at)})})
+    : turn.status === "open" ? el("div", {class: "node-time", text: t("turn_open_in_record", {time: when(turn.started_at)})})
+    : el("div", {class: "node-time", text: t("turn_ended", {time: when(turn.finished_at || turn.started_at), count: turn.count})});
   return {status, tone: TONE[status] || TONE.unknown, outside: !agent.live, parts: [
     el("div", {class: "node-head"}, el("span", {class: "node-dot"}),
       el("span", {class: "node-tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
-      el("span", {class: "node-title", text: agent.name || "(이름 없음)"}),
-      el("span", {class: "node-state", text: agent.live ? agent.status_label : "herdr 밖"})),
-    el("div", {class: "node-role", text: turn.title ? `${turn.status === "open" ? "지금" : "마지막"}: ${turn.title}` : "턴 기록 없음"}),
+      el("span", {class: "node-title", text: agent.name || t("no_name")}),
+      el("span", {class: "node-state", text: agent.live ? agentState(agent.status) : t("outside")})),
+    el("div", {class: "node-role", text: turn.title ? `${turn.status === "open" ? t("now_prefix") : t("last_prefix")}: ${titleText(turn.title)}` : t("no_turn_record")}),
     timeLine,
-    el("div", {class: "node-foot", text: [`보냄 ${counts.sent}`, `받음 ${counts.received}`, counts.moving ? `이동 중 ${counts.moving}` : null,
-      short(agent.session_id), (agent.sessions || []).length > 1 ? `세션 ${agent.sessions.length}개` : null].filter(Boolean).join(" · ")})]};
+    el("div", {class: "node-foot", text: [t("sent_n", {count: counts.sent}), t("received_n", {count: counts.received}),
+      counts.moving ? t("moving_n", {count: counts.moving}) : null, short(agent.session_id),
+      (agent.sessions || []).length > 1 ? t("sessions_n", {count: agent.sessions.length}) : null].filter(Boolean).join(" · ")})]};
 }
 function renderNodes(m, pos) {
   const world = $("world"), keep = new Set();
@@ -541,12 +582,13 @@ function markers() {
 function groupLabel(group) {
   if (group.category === "delegation") {
     const sub = group.edges[0].sub;
-    return `위임 · ${{running: "진행 중", completed: "완료"}[sub.status] || "확인 불가"}`;
+    return t("delegation_label", {state: subState(sub.status)});
   }
-  const base = group.category !== "derived" ? CATEGORY[group.category].label : group.interim ? "중간 응답(맡긴 일 대기)"
-    : group.secondary ? "결과(도출 · 명시 결과 있음)" : "결과(도출)";
-  return [`${base}${group.total > 1 ? ` ×${group.total}` : ""}`, group.pending ? `${group.pending} 이동 중` : null,
-          group.undelivered ? `${group.undelivered} 미전달` : null, group.unverified ? `미검증 ${group.unverified}` : null].filter(Boolean).join(" · ");
+  const base = group.category !== "derived" ? t(CATEGORY[group.category].label) : group.interim ? t("interim_group")
+    : group.secondary ? t("derived_with_explicit") : t("cat_derived");
+  return [`${base}${group.total > 1 ? ` ×${group.total}` : ""}`, group.pending ? t("group_moving", {count: group.pending}) : null,
+          group.undelivered ? t("group_undelivered", {count: group.undelivered}) : null,
+          group.unverified ? t("group_unverified", {count: group.unverified}) : null].filter(Boolean).join(" · ");
 }
 function groupStyle(group) {
   const kind = CATEGORY[group.category];
@@ -609,7 +651,7 @@ function nameOf(key) {
   const agent = bundle.agents.find((a) => a.key === key);
   if (agent) return agent.name || short(agent.session_id);
   const sub = model && model.subs.find((s) => s.key === key);
-  return sub ? (sub.subagent.agent_type || "서브에이전트") : short(key);
+  return sub ? (sub.subagent.agent_type || t("subagent")) : short(key);
 }
 
 // ---------- camera ----------
@@ -658,52 +700,56 @@ function selectGraph(type, key) {
   renderInspector();
 }
 function statusText(edge) {
-  if (edge.basis === "derived" && edge.interim) return "중간 응답 · 맡긴 일 대기";
-  if (edge.basis === "derived") return edge.explicit_result ? "도출 · 명시 결과 있음" : "도출";
-  const late = edge.delivery.latency_seconds != null ? ` · ${edge.delivery.latency_seconds}초` : "";
-  return `${edge.delivery.label}${late}`;
+  if (edge.basis === "derived" && edge.interim) return t("interim_status");
+  if (edge.basis === "derived") return edge.explicit_result ? t("derived_status_explicit") : t("derived_status");
+  const late = edge.delivery.latency_seconds != null ? ` · ${t("seconds", {seconds: edge.delivery.latency_seconds})}` : "";
+  return `${statusName(edge.delivery.status)}${late}`;
 }
 function edgeDetail(edge) {
   const d = edge.delivery || {};
-  const parts = [facts([["보낸 쪽", edge.from_key], ["받는 쪽", edge.to_key], ["종류", KIND[edge.kind] || edge.kind],
-      ["근거 종류", edge.basis === "derived" ? "도출(받는 세션의 턴 최종 응답)" : "명시(래퍼 저널)"], ["시각", edge.at],
-      ["메시지 ID", edge.message_id], ["답하는 메시지", edge.reply_to]]),
+  const parts = [facts([[t("f_sender"), edge.from_key], [t("f_recipient"), edge.to_key], [t("f_kind"), kindName(edge.kind)],
+      [t("f_basis"), edge.basis === "derived" ? t("basis_derived") : t("basis_journal")], [t("f_time"), edge.at],
+      [t("f_message_id"), edge.message_id], [t("f_reply_to"), edge.reply_to]]),
     el("pre", {text: edge.text || ""})];
   if (edge.basis === "journal") {
     const v = edge.sender_verification;
-    parts.push(panel(`${edge.id}:journal`, `저널 · seq ${d.journal_seq}`, facts([["event_id", d.journal_event_id], ["기록 시각", d.journal_at],
-      ["보낸 쪽 확인", v ? `${VERIFY[v.method] || v.method} · ${v.detail || ""}` : "기록 없음(이전 래퍼)"]])));
-    parts.push(panel(`${edge.id}:outcome`, `전송 결과 · ${d.outcome ? d.outcome.outcome : "기록 없음"}`,
-      d.outcome ? facts([["seq", d.outcome.seq], ["시각", d.outcome.at], ["오류 코드", d.outcome.error_code], ["오류 내용", d.outcome.error_message]])
-                : el("div", {class: "meta", text: "전송 결과 이벤트가 아직 없다."})));
-    parts.push(panel(`${edge.id}:receipt`, `수신 기록 · ${d.label}${d.duplicates ? ` · 중복 ${d.duplicates}건` : ""}`,
-      d.receipts && d.receipts.length ? d.receipts.map(receipt) : el("div", {class: "meta", text: d.reason || "받는 세션 기록에서 이 메시지 ID를 찾지 못했다."}),
-      facts([["보낼 때 받는 쪽 상태", d.recipient_status_at_send], ["전달까지", d.latency_seconds != null ? `${d.latency_seconds}초` : null],
-             ["받는 쪽 세션", d.recipient_resolved ? `보낼 때 보고되지 않음 · 같은 이름(${d.recipient_resolved.name})·도구(${d.recipient_resolved.agent || "?"})·pane(${d.recipient_resolved.pane_id})의 세션 ${d.recipient_resolved.candidates.length}개${(d.receipts || []).length ? "에서 메시지 ID로 찾음" : "에서 찾지 못함"}` : null]]),
-      d.variation ? facts([["본문 변형", d.variation.equal_after ? `${d.variation.equal_after} 후 같음` : `첫 차이 위치 ${d.variation.first_difference}`],
-                           ["길이(보냄/받음)", `${d.variation.sent_length} / ${d.variation.received_length}`]]) : null,
-      d.queue ? d.queue.map((q) => facts([["대기열 기록", `줄 ${q.line} · ${q.at}`]])) : null));
+    parts.push(panel(`${edge.id}:journal`, t("p_journal", {seq: d.journal_seq}), facts([["event_id", d.journal_event_id], [t("f_recorded_at"), d.journal_at],
+      [t("f_sender_check"), v ? `${t("verify_" + v.method)} · ${v.detail || ""}` : t("no_record_old_bridge")]])));
+    parts.push(panel(`${edge.id}:outcome`, t("p_outcome", {outcome: d.outcome ? d.outcome.outcome : t("no_record")}),
+      d.outcome ? facts([[t("f_seq"), d.outcome.seq], [t("f_time"), d.outcome.at], [t("f_error_code"), d.outcome.error_code], [t("f_error_message"), d.outcome.error_message]])
+                : el("div", {class: "meta", text: t("no_outcome_yet")})));
+    const resolved = d.recipient_resolved;
+    parts.push(panel(`${edge.id}:receipt`, t("p_receipt", {status: statusName(d.status)}) + (d.duplicates ? t("duplicates", {count: d.duplicates}) : ""),
+      d.receipts && d.receipts.length ? d.receipts.map(receipt) : el("div", {class: "meta", text: d.reason ? t("rs_" + d.reason) : t("receipt_missing")}),
+      facts([[t("f_recipient_at_send"), d.recipient_status_at_send], [t("f_latency"), d.latency_seconds != null ? t("seconds", {seconds: d.latency_seconds}) : null],
+             [t("f_recipient_session"), resolved ? t((d.receipts || []).length ? "resolved_found" : "resolved_missing",
+               {name: resolved.name, agent: resolved.agent || "?", pane: resolved.pane_id, count: resolved.candidates.length}) : null]]),
+      d.variation ? facts([[t("f_variation"), d.variation.equal_after ? t("equal_after", {step: t("var_" + d.variation.equal_after)})
+                                                                     : t("first_difference", {offset: d.variation.first_difference})],
+                           [t("f_lengths"), `${d.variation.sent_length} / ${d.variation.received_length}`]]) : null,
+      d.queue ? d.queue.map((q) => facts([[t("f_queue"), t("line_at", {line: q.line, time: q.at})]])) : null));
   } else {
     const ev = edge.evidence || {};
-    if (edge.interim) parts.push(el("div", {class: "banner", text: "이 턴은 맡긴 일(백그라운드 서브에이전트나 다른 에이전트에게 보낸 작업 요청)이 돌아오기 전에 끝났다. 마지막 응답은 진행 상황을 알린 중간 응답이고 결과가 아니다."}));
-    parts.push(panel(`${edge.id}:derived`, "도출 근거", facts([
-      ["기다린 일", (edge.waiting_on || []).map((w) => w.kind === "agent"
-        ? `${w.to_agent || "?"}에게 보낸 작업 요청 ${w.message_id} · ${w.answered_at ? `${when(w.answered_at)} 결과 도착` : "결과 없음"}`
-        : `서브에이전트 ${w.description || w.agent_id || ""} · ${w.finished_at ? `${when(w.finished_at)} 끝남` : w.status === "running" ? "진행 중" : "확인 불가"}`).join(", ") || null],["기록", ev.path], ["턴", ev.turn], ["최종 응답 record", (ev.final_record_ids || []).join(", ")],
-      ["턴 종료 record", ev.end_record_id], ["작업 중 흡수 입력에서 시작", edge.absorbed_mid_turn ? "예(다른 입력과 섞였을 수 있음)" : null],
-      ["같은 턴의 다른 입력", (edge.other_inputs_in_turn || []).length ? `${edge.other_inputs_in_turn.length}건 · 응답이 그 입력에도 답했을 수 있다` : "없음"],
-      ["명시 결과", edge.explicit_result ? `${edge.explicit_result} (기본 결과 경로)`
-        : edge.interim ? "없음 · 이 응답은 중간 응답이라 결과 근거가 아직 없다" : "없음 · 이 도출 결과가 유일한 결과 근거"]])));
-    parts.push(panel(`${edge.id}:readback`, `보낸 쪽 수신 · ${edge.sender_receipt.length ? "확인" : "미확인"}`,
-      edge.sender_receipt.length ? edge.sender_receipt.map((r) => facts([["도구 출력", r.record_id], ["줄", r.line], ["시각", r.at]]))
-        : el("div", {class: "meta", text: "보낸 쪽 기록의 도구 출력에서 이 응답 원문을 찾지 못했다."})));
+    if (edge.interim) parts.push(el("div", {class: "banner", text: t("interim_banner")}));
+    parts.push(panel(`${edge.id}:derived`, t("p_derived"), facts([
+      [t("f_waited_on"), (edge.waiting_on || []).map((w) => w.kind === "agent"
+        ? t("waited_agent", {to: w.to_agent || "?", id: w.message_id, answer: w.answered_at ? t("answered_at", {time: when(w.answered_at)}) : t("no_result")})
+        : t("waited_sub", {name: w.description || w.agent_id || "", state: w.finished_at ? t("ended_at", {time: when(w.finished_at)}) : subState(w.status)})).join(", ") || null],
+      [t("f_record"), ev.path], [t("f_turn"), ev.turn], [t("f_final_record"), (ev.final_record_ids || []).join(", ")],
+      [t("f_end_record"), ev.end_record_id], [t("f_from_absorbed"), edge.absorbed_mid_turn ? t("absorbed_yes") : null],
+      [t("f_other_inputs"), (edge.other_inputs_in_turn || []).length ? t("other_inputs_n", {count: edge.other_inputs_in_turn.length}) : t("none")],
+      [t("f_explicit"), edge.explicit_result ? t("explicit_default", {id: edge.explicit_result})
+        : edge.interim ? t("explicit_none_interim") : t("explicit_none_only")]])));
+    parts.push(panel(`${edge.id}:readback`, t("p_readback", {state: edge.sender_receipt.length ? t("confirmed_word") : t("unconfirmed_word")}),
+      edge.sender_receipt.length ? edge.sender_receipt.map((r) => facts([[t("f_tool_output"), r.record_id], [t("f_line"), r.line], [t("f_time"), r.at]]))
+        : el("div", {class: "meta", text: t("readback_missing")})));
   }
   return parts;
 }
 function feedItem(edge, label) {
   const group = model.groups.find((g) => g.edges.includes(edge));
   return el("button", {type: "button", onclick: () => group && selectGraph("group", group.key)},
-    el("time", {text: when(edge.at)}), el("strong", {text: label || `${edge.from_name} → ${edge.to_name} · ${edge.basis === "derived" ? (edge.interim ? "중간 응답" : "결과(도출)") : KIND[edge.kind] || edge.kind}`}),
+    el("time", {text: when(edge.at)}), el("strong", {text: label || `${edge.from_name} → ${edge.to_name} · ${edge.basis === "derived" ? (edge.interim ? t("interim_short") : t("cat_derived")) : kindName(edge.kind)}`}),
     el("span", {text: statusText(edge)}));
 }
 function renderInspector() {
@@ -715,11 +761,12 @@ function renderInspector() {
     signature = JSON.stringify(["group", group.key, group.edges]);
     if (group.category === "delegation") {
       const sub = group.edges[0].sub;
-      parts = [el("h2", {text: `${nameOf(group.from)} → ${sub.agent_type || "서브에이전트"}`}), el("div", {class: "sub-title", text: groupLabel(group)}),
-        facts([["설명", sub.description], ["상태", sub.status], ["백그라운드", sub.background ? "예" : "아니오"], ["시작", sub.started_at],
-               ["마지막 기록", sub.last_at], ["끝남", sub.finished_at], ["Agent 호출", sub.tool_use_id], ["기록", sub.path]]),
-        el("div", {class: "section-title", text: "위임 원문"}), el("pre", {text: sub.prompt || "기록 없음"}),
-        el("div", {class: "section-title", text: "최종 응답"}), el("pre", {text: sub.final_text || "아직 없음"})];
+      parts = [el("h2", {text: `${nameOf(group.from)} → ${sub.agent_type || t("subagent")}`}), el("div", {class: "sub-title", text: groupLabel(group)}),
+        facts([[t("f_description"), sub.description], [t("f_state"), subState(sub.status)], [t("f_background"), sub.background ? t("yes") : t("no")],
+               [t("f_started"), sub.started_at], [t("f_last_record"), sub.last_at], [t("f_finished"), sub.finished_at], [t("f_agent_call"), sub.tool_use_id],
+               [t("f_record"), sub.path]]),
+        el("div", {class: "section-title", text: t("s_delegation_text")}), el("pre", {text: sub.prompt || t("no_record")}),
+        el("div", {class: "section-title", text: t("s_final_reply")}), el("pre", {text: sub.final_text || t("not_yet")})];
     } else {
       parts = [el("h2", {text: `${nameOf(group.from)} → ${nameOf(group.to)}`}), el("div", {class: "sub-title", text: groupLabel(group)}),
         ...[...group.edges].reverse().map((edge) => panel(`${edge.id}:item`, `${when(edge.at)} · ${statusText(edge)}${edge.message_id ? " · " + edge.message_id : ""}`, edgeDetail(edge)))];
@@ -729,33 +776,35 @@ function renderInspector() {
     signature = JSON.stringify(["agent", agent, counts, bundle.unattributed.filter((u) => u.agent_key === agent.key)]);
     const related = bundle.edges.filter((e) => e.basis === "journal" && [e.from_card || e.from_key, e.to_card || e.to_key].includes(card.key));
     const inputs = bundle.unattributed.filter((u) => u.agent_key === agent.key || (agent.sessions || []).some((m) => m.key === u.agent_key));
-    parts = [el("h2", {text: `${providerName(agent.provider)} · ${agent.name || "(이름 없음)"}`}),
-      el("div", {class: "sub-title", text: agent.live ? `herdr 판정: ${agent.status_label}` : "herdr에서 보이지 않음 · 상태 미확인"}),
-      agent.live && agent.status === "blocked" ? el("div", {class: "banner", text: "herdr가 승인이나 질문을 기다린다고 판정했다(추정). 이 화면은 답하지 않는다. herdr나 herdr web ui에서 응답한다."}) : null,
-      agent.live ? webLink(agent, "web-link", "herdr web ui에서 이 pane 열기 ↗") : null,
-      facts([["지금 턴", turn.title ? `${turn.status === "open" ? "진행 중" : "끝남"} · ${turn.title}` : null], ["턴 시작", turn.started_at],
-             ["턴 종료", turn.finished_at], ["턴 수", turn.count], ["세션", agent.session_id], ["기록", agent.transcript], ["pane", agent.pane_id],
-             ["Claude 실행", agent.runtime ? `${agent.runtime.status || "?"} · pid ${agent.runtime.pid}${agent.runtime.alive ? "" : " (종료됨)"}` : null],
-             ["이전 세션", (agent.sessions || []).filter((m) => !m.current).map((m) => short(m.session_id)).join(", ") || null],
-             ["전달", `보냄 ${counts.sent} · 받음 ${counts.received} · 이동 중 ${counts.moving}`]]),
-      el("div", {class: "section-title", text: `주고받은 전달 ${related.length}건`}),
-      related.length ? el("div", {class: "feed"}, [...related].reverse().map((e) => feedItem(e))) : el("div", {class: "meta", text: "없음"}),
-      panel(`${agent.key}:inputs`, `사람 입력 ${inputs.length}건(선으로 그리지 않음)`,
-        inputs.length ? el("div", {class: "rows"}, inputs.map((u) => el("div", {}, el("strong", {text: `${when(u.at)} · ${u.reason}`}),
-          el("span", {class: "mono", text: `${u.path}:${u.line}`})))) : el("div", {class: "meta", text: "없음"}))];
+    parts = [el("h2", {text: `${providerName(agent.provider)} · ${agent.name || t("no_name")}`}),
+      el("div", {class: "sub-title", text: agent.live ? t("herdr_judged", {state: agentState(agent.status)}) : t("not_seen_unknown")}),
+      agent.live && agent.status === "blocked" ? el("div", {class: "banner", text: t("blocked_banner")}) : null,
+      agent.live ? webLink(agent, "web-link", t("web_open_pane")) : null,
+      facts([[t("f_current_turn"), turn.title ? `${turn.status === "open" ? t("turn_state_running") : t("turn_state_ended")} · ${titleText(turn.title)}` : null],
+             [t("f_turn_start"), turn.started_at], [t("f_turn_end"), turn.finished_at], [t("f_turns"), turn.count], [t("f_session"), agent.session_id],
+             [t("f_record"), agent.transcript], [t("f_pane"), agent.pane_id],
+             [t("f_claude_run"), agent.runtime ? `${agent.runtime.status || "?"} · pid ${agent.runtime.pid}${agent.runtime.alive ? "" : t("exited")}` : null],
+             [t("f_earlier_sessions"), (agent.sessions || []).filter((m) => !m.current).map((m) => short(m.session_id)).join(", ") || null],
+             [t("f_deliveries"), t("deliveries_counts", {sent: counts.sent, received: counts.received, moving: counts.moving})]]),
+      el("div", {class: "section-title", text: t("s_related", {count: related.length})}),
+      related.length ? el("div", {class: "feed"}, [...related].reverse().map((e) => feedItem(e))) : el("div", {class: "meta", text: t("none")}),
+      panel(`${agent.key}:inputs`, t("p_human_inputs", {count: inputs.length}),
+        inputs.length ? el("div", {class: "rows"}, inputs.map((u) => el("div", {}, el("strong", {text: `${when(u.at)} · ${t("rs_" + u.reason)}`}),
+          el("span", {class: "mono", text: `${u.path}:${u.line}`})))) : el("div", {class: "meta", text: t("none")}))];
   } else if (card && card.subagent) {
     const sub = card.subagent;
     signature = JSON.stringify(["sub", sub]);
-    parts = [el("h2", {text: `서브에이전트 · ${sub.agent_type || ""}`}), facts([["설명", sub.description], ["상태", sub.status], ["기록", sub.path]]),
-      el("div", {class: "section-title", text: "위임 원문"}), el("pre", {text: sub.prompt || "기록 없음"}),
-      el("div", {class: "section-title", text: "최종 응답"}), el("pre", {text: sub.final_text || "아직 없음"})];
+    parts = [el("h2", {text: t("s_subagent_title", {type: sub.agent_type || ""})}),
+      facts([[t("f_description"), sub.description], [t("f_state"), subState(sub.status)], [t("f_record"), sub.path]]),
+      el("div", {class: "section-title", text: t("s_delegation_text")}), el("pre", {text: sub.prompt || t("no_record")}),
+      el("div", {class: "section-title", text: t("s_final_reply")}), el("pre", {text: sub.final_text || t("not_yet")})];
   } else {
     const keys = new Set(shownAgents().map((a) => a.key));
     const recent = bundle.edges.filter((e) => (showDerived || e.basis !== "derived") && shownEdge(e, keys)).sort((a, b) => time(b.at) - time(a.at)).slice(0, 12);
     signature = JSON.stringify(["overview", recent.map((e) => [e.id, statusText(e)]), graphSelected]);
-    parts = [el("h2", {text: graphSelected ? "선택한 항목이 지금 묶음에 없다" : "최근 활동"}),
-      el("div", {class: "sub-title", text: "선이나 카드를 누르면 원문과 근거를 보여 준다. 끌어서 이동하고 휠로 확대·축소한다."}),
-      recent.length ? el("div", {class: "feed"}, recent.map((e) => feedItem(e))) : el("div", {class: "meta", text: "아직 래퍼로 보낸 메시지가 없다."})];
+    parts = [el("h2", {text: graphSelected ? t("missing_selection") : t("recent")}),
+      el("div", {class: "sub-title", text: t("recent_hint")}),
+      recent.length ? el("div", {class: "feed"}, recent.map((e) => feedItem(e))) : el("div", {class: "meta", text: t("no_messages")})];
   }
   if (signature === shownInspector) return;  // Keep the reading position and open panels while nothing changed.
   shownInspector = signature;
@@ -821,7 +870,7 @@ function setupGraph() {
     else if (autoFit) fitView();
   }).observe(graph);
   setInterval(() => {  // Elapsed time on running turns, without re-rendering anything else.
-    for (const node of document.querySelectorAll("[data-since]")) node.textContent = `턴 진행 ${elapsed(node.dataset.since)}`;
+    for (const node of document.querySelectorAll("[data-since]")) node.textContent = t("turn_running", {elapsed: elapsed(node.dataset.since)});
   }, 1000);
 }
 
@@ -830,24 +879,24 @@ function renderAgents() {
   const boxEl = $("agents");
   const agents = shownAgents();
   boxEl.style.setProperty("--cols", Math.max(1, agents.length));
-  if (!agents.length) return boxEl.replaceChildren(el("div", {class: "card empty", text: "아직 관찰한 에이전트가 없다. 저널 기록이나 herdr 연결을 기다린다."}));
+  if (!agents.length) return boxEl.replaceChildren(el("div", {class: "card empty", text: t("empty_agents")}));
   boxEl.replaceChildren(...agents.map((agent) => phase(el("article", {class: "card agent", "data-status": agent.live ? agent.status : "outside"},
     el("div", {class: "agent-head"},
       el("span", {class: "tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
-      el("span", {class: "agent-name", text: agent.name || "(이름 없음)"}),
-      el("span", {class: "pill", "data-tone": AGENT_TONE[agent.status] || "", title: agent.live ? "herdr 판정(추정)" : "herdr에서 보이지 않음"},
-        el("i"), el("span", {text: agent.live ? agent.status_label : "herdr 밖 · 상태 미확인"}))),
+      el("span", {class: "agent-name", text: agent.name || t("no_name")}),
+      el("span", {class: "pill", "data-tone": AGENT_TONE[agent.status] || "", title: agent.live ? t("herdr_judged_title") : t("not_seen")},
+        el("i"), el("span", {text: agent.live ? agentState(agent.status) : t("outside_unknown")}))),
     el("dl", {},
-      el("dt", {text: "세션"}), el("dd", {text: agent.session_id, title: agent.key}),
-      el("dt", {text: "기록"}), el("dd", {text: agent.transcript ? agent.transcript.split("/").slice(-1)[0] : "찾지 못함", title: agent.transcript || ""}),
-      agent.title ? [el("dt", {text: "제목"}), el("dd", {text: agent.title, style: "font-family:var(--font-ui)"})] : null,
-      (agent.sessions || []).length > 1 ? [el("dt", {text: "이전 세션"}), el("dd", {},
-        agent.sessions.filter((m) => !m.current).map((m) => el("div", {text: `${short(m.session_id)} → fork`, title: m.transcript || m.key})))] : null,
+      el("dt", {text: t("f_session")}), el("dd", {text: agent.session_id, title: agent.key}),
+      el("dt", {text: t("f_record")}), el("dd", {text: agent.transcript ? agent.transcript.split("/").slice(-1)[0] : t("not_found"), title: agent.transcript || ""}),
+      agent.title ? [el("dt", {text: t("f_title")}), el("dd", {text: agent.title, style: "font-family:var(--font-ui)"})] : null,
+      (agent.sessions || []).length > 1 ? [el("dt", {text: t("f_earlier_sessions")}), el("dd", {},
+        agent.sessions.filter((m) => !m.current).map((m) => el("div", {text: t("fork_suffix", {id: short(m.session_id)}), title: m.transcript || m.key})))] : null,
       agent.pane_id ? [el("dt", {text: "pane"}), el("dd", {}, agent.pane_id, agent.live ? webLink(agent, "web-link compact") : null)] : null,
-      agent.runtime ? [el("dt", {text: "Claude 실행"}), el("dd", {text: `${agent.runtime.status || "?"} · pid ${agent.runtime.pid}${agent.runtime.alive ? "" : " (종료됨)"}`})] : null),
-    (agent.subagents || []).length ? panel(`${agent.key}:subagents`, `서브에이전트 ${agent.subagents.length}개`,
+      agent.runtime ? [el("dt", {text: t("f_claude_run")}), el("dd", {text: `${agent.runtime.status || "?"} · pid ${agent.runtime.pid}${agent.runtime.alive ? "" : t("exited")}`})] : null),
+    (agent.subagents || []).length ? panel(`${agent.key}:subagents`, t("subagents_n", {count: agent.subagents.length}),
       el("div", {class: "rows"}, agent.subagents.map((sub) => el("div", {},
-        el("strong", {text: `${sub.agent_type || "agent"} · ${sub.status}${sub.background ? " · 백그라운드" : ""}`}),
+        el("strong", {text: `${sub.agent_type || "agent"} · ${subState(sub.status)}${sub.background ? t("background_suffix") : ""}`}),
         el("span", {text: sub.description || ""}),
         el("span", {class: "mono", text: sub.path.split("/").slice(-1)[0]}))))) : null))));
 }
@@ -857,7 +906,7 @@ function renderLanes(agents) {
   lanes.replaceChildren(...agents.map((agent) => el("div", {class: "lane"},
     el("span", {class: "tool", "data-provider": agent.provider, text: providerName(agent.provider)}),
     el("span", {class: "lane-name", text: agent.name || short(agent.session_id)}),
-    el("span", {class: "pill", "data-tone": agent.live ? AGENT_TONE[agent.status] || "" : "", text: agent.live ? agent.status_label : "herdr 밖"}))));
+    el("span", {class: "pill", "data-tone": agent.live ? AGENT_TONE[agent.status] || "" : "", text: agent.live ? agentState(agent.status) : t("outside")}))));
 }
 function timeLayout(edges, agents) {
   // Rows sit at their real times; gaps over two minutes fold into one marked band; edges keep room for labels.
@@ -887,7 +936,8 @@ function nowPosition(lay, now) {
 }
 let live = null;  // Elements the clock moves in place, so a periodic tick never replaces what a reader may be clicking.
 function quiet(seconds) {
-  return seconds >= 3600 ? `${Math.floor(seconds / 3600)}시간 ${Math.round(seconds % 3600 / 60)}분` : `${Math.round(seconds / 60)}분`;
+  return seconds >= 3600 ? t("hours_minutes", {hours: Math.floor(seconds / 3600), minutes: Math.round(seconds % 3600 / 60)})
+    : t("minutes", {minutes: Math.round(seconds / 60)});
 }
 function tickNow(now) {
   if (!live || !live.svg.isConnected) return;
@@ -899,7 +949,7 @@ function tickNow(now) {
   const [line, label] = live.now.children;
   line.setAttribute("y1", at.y); line.setAttribute("y2", at.y);
   label.setAttribute("y", at.y - 6);
-  label.textContent = `지금 ${when(new Date(now).toISOString())}`;
+  label.textContent = t("now_at", {time: when(new Date(now).toISOString())});
   if (at.gap && !live.tail) {
     live.tail = el("g", {class: "gap-mark"}, el("line", {x1: 0, x2: live.width}), el("text", {x: live.width / 2, "text-anchor": "middle"}));
     live.svg.insertBefore(live.tail, live.now);
@@ -909,7 +959,7 @@ function tickNow(now) {
     const [mark, text] = live.tail.children;
     mark.setAttribute("y1", at.gap.y); mark.setAttribute("y2", at.gap.y);
     text.setAttribute("y", at.gap.y - 6);
-    text.textContent = `⋯ ${quiet(at.gap.seconds)} 조용함 ⋯`;
+    text.textContent = t("quiet_band", {span: quiet(at.gap.seconds)});
   }
 }
 let seenEdges = null, unseen = 0;
@@ -930,7 +980,7 @@ function renderDiagram() {
   const agents = shownAgents(), keys = agents.map((a) => a.key), shown = new Set(keys);
   const edges = bundle.edges.filter((e) => (showDerived || e.basis !== "derived") && shownEdge(e, shown)).sort((a, b) => time(a.at) - time(b.at));
   renderLanes(agents);
-  if (!edges.length && !agents.some((a) => (a.turns || []).length)) return boxEl.replaceChildren(el("div", {class: "empty", text: "아직 래퍼로 보낸 메시지가 없다."}));
+  if (!edges.length && !agents.some((a) => (a.turns || []).length)) return boxEl.replaceChildren(el("div", {class: "empty", text: t("no_messages")}));
   const width = boxEl.clientWidth || 800, cols = Math.max(1, keys.length), gap = 12;  // Columns line up with the agent cards and lanes.
   const colWidth = (width - gap * (cols - 1)) / cols;
   const x = (key) => { const i = keys.indexOf(key); return i < 0 ? null : i * (colWidth + gap) + colWidth / 2; };
@@ -941,7 +991,7 @@ function renderDiagram() {
   live = {svg, lay, width, lifelines, running: [], tail: null, now: null};
   for (const quietBand of lay.gaps) svg.append(el("g", {class: "gap-mark"},
     el("line", {x1: 0, x2: width, y1: quietBand.y, y2: quietBand.y}),
-    el("text", {x: width / 2, y: quietBand.y - 6, "text-anchor": "middle", text: `⋯ ${quiet(quietBand.seconds)} 조용함 ⋯`})));
+    el("text", {x: width / 2, y: quietBand.y - 6, "text-anchor": "middle", text: t("quiet_band", {span: quiet(quietBand.seconds)})})));
   agents.forEach((agent) => {
     const cx = x(agent.key);
     for (const turn of agent.turns || []) {
@@ -949,9 +999,9 @@ function renderDiagram() {
       const running = !turn.end && turn.state === "open" && agent.live && agent.status === "working";
       const y2 = turn.end ? lay.ymap.get(time(turn.end) || 1) : running ? at.y : y1 + 14;
       const kind = running ? "running" : turn.state;
-      const span = turn.end ? `${when(turn.start)}–${when(turn.end)}` : running ? `${when(turn.start)}–지금` : `${when(turn.start)}– (기록상 닫히지 않음)`;
+      const span = turn.end ? `${when(turn.start)}–${when(turn.end)}` : running ? t("span_now", {start: when(turn.start)}) : t("span_open", {start: when(turn.start)});
       const bar = el("rect", {class: `bar ${kind}${turn.system ? " system" : ""}`, x: cx - 6, width: 12, y: y1, height: Math.max(6, y2 - y1), rx: 5},
-        el("title", {text: `${agent.name || ""} · ${span}${turn.title ? " · " + turn.title : ""}${turn.inputs > 1 ? ` · 입력 ${turn.inputs}건` : ""}`}));
+        el("title", {text: `${agent.name || ""} · ${span}${turn.title ? " · " + titleText(turn.title) : ""}${turn.inputs > 1 ? t("inputs_n", {count: turn.inputs}) : ""}`}));
       if (running) live.running.push({bar, y1});
       svg.append(bar);
     }
@@ -983,7 +1033,7 @@ function renderDiagram() {
   const count = edges.length;
   if (seenEdges !== null && count > seenEdges) {
     if (following) scrollToNow();
-    else { unseen += count - seenEdges; $("follow").textContent = `새 전달 ${unseen}건 ↓`; $("follow").hidden = false; }
+    else { unseen += count - seenEdges; $("follow").textContent = t("follow_count", {count: unseen}); $("follow").hidden = false; }
   }
   seenEdges = count;
 }
@@ -993,7 +1043,7 @@ function renderDetail() {
   const signature = edge ? JSON.stringify(edge) : selected ? "missing" : "none";
   if (signature === shownDetail) return;  // Keep reading position and text selection while nothing changed.
   shownDetail = signature;
-  if (!edge) return boxEl.replaceChildren(el("h2", {text: selected ? "선택한 선이 지금 묶음에 없다" : "선을 누르면 원문과 근거를 보여 준다"}));
+  if (!edge) return boxEl.replaceChildren(el("h2", {text: selected ? t("missing_line") : t("pick_line")}));
   boxEl.replaceChildren(el("h2", {text: `${edge.from_name} → ${edge.to_name} · ${edgeLabel(edge)}`}), ...edgeDetail(edge));
 }
 function select(id) {
@@ -1012,19 +1062,20 @@ function facts(pairs) {
     .map(([k, v]) => [el("dt", {text: k}), el("dd", {class: typeof v === "string" && /^[\w:./-]+$/.test(v) && v.length > 20 ? "mono" : "", text: String(v)})]));
 }
 function receipt(r) {
-  return el("div", {}, facts([["기록", `${r.path}:${r.line}`], ["record ID", r.record_id], ["형태", r.form === "queued_command" ? "작업 중 흡수(queued_command)" : r.form],
-    ["시각", r.at], ["대화 진입", r.entered_at ? `${r.entered_at} (대기열에서 진행 중인 턴으로)` : null], ["턴", r.turn], ["사유", r.reason],
-    ["기록 형태", r.envelope ? `받는 도구가 감싸서 기록(${r.envelope.kind} id=${r.envelope.id}) · 안쪽 본문으로 비교` : null]]));
+  return el("div", {}, facts([[t("f_record"), `${r.path}:${r.line}`], ["record ID", r.record_id],
+    [t("f_form"), r.form === "queued_command" ? t("form_absorbed") : r.form], [t("f_time"), r.at],
+    [t("f_entered"), r.entered_at ? t("entered_value", {time: r.entered_at}) : null], [t("f_turn"), r.turn], [t("f_reason"), r.reason ? t("rs_" + r.reason) : null],
+    [t("f_envelope"), r.envelope ? t("envelope_value", {kind: r.envelope.kind, id: r.envelope.id}) : null]]));
 }
 function renderExtras() {
   const boxEl = $("extras");
   const list = bundle.unattributed, names = Object.fromEntries(bundle.agents.map((a) => [a.key, a.name]));
-  const parts = [panel("unattributed", `에이전트 선으로 그리지 않은 입력 · ${list.length}건`,
+  const parts = [panel("unattributed", t("p_unattributed", {count: list.length}),
     list.length ? el("div", {class: "rows"}, list.map((u) => el("div", {},
-      el("strong", {text: `${names[u.agent_key] || u.agent_key} · ${when(u.at)} · ${u.reason}`}),
-      el("span", {class: "mono", text: `${u.path}:${u.line} · ${u.record_id}`})))) : el("div", {class: "meta", text: "없음"}))];
-  if (bundle.unreported_agents.length) parts.push(panel("unreported", `세션을 보고하지 않은 herdr 에이전트 · ${bundle.unreported_agents.length}`,
-    el("div", {class: "rows"}, bundle.unreported_agents.map((a) => el("div", {}, `${a.name || "(이름 없음)"} · ${a.agent || "?"} · ${a.pane_id} · ${a.status_label}`,
+      el("strong", {text: `${names[u.agent_key] || u.agent_key} · ${when(u.at)} · ${t("rs_" + u.reason)}`}),
+      el("span", {class: "mono", text: `${u.path}:${u.line} · ${u.record_id}`})))) : el("div", {class: "meta", text: t("none")}))];
+  if (bundle.unreported_agents.length) parts.push(panel("unreported", t("p_unreported", {count: bundle.unreported_agents.length}),
+    el("div", {class: "rows"}, bundle.unreported_agents.map((a) => el("div", {}, `${a.name || t("no_name")} · ${a.agent || "?"} · ${a.pane_id} · ${agentState(a.status)}`,
       webLink(a, "web-link compact"))))));
   boxEl.replaceChildren(...parts);
 }
@@ -1053,49 +1104,59 @@ function render() {
 
 function connect() {
   const pill = $("connection");
-  const state = (tone, text) => { pill.dataset.tone = tone; pill.querySelector("span").textContent = text; };
+  const state = (tone, key, vars = {}) => {  // The key is kept so a language switch can reword the pill.
+    pill.dataset.tone = tone;
+    pill.dataset.key = key;
+    pill.dataset.vars = JSON.stringify(vars);
+    pill.querySelector("span").textContent = t(key, vars);
+  };
   const source = new EventSource("/api/stream");
-  source.onopen = () => state("good", "실시간");
-  source.onmessage = (event) => { bundle = JSON.parse(event.data); state("good", "실시간"); render(); };
-  source.addEventListener("source-error", (event) => state("bad", "수집 오류: " + JSON.parse(event.data).error));
-  source.onerror = () => state("warn", "다시 연결 중");
+  source.onopen = () => state("good", "live");
+  source.onmessage = (event) => { bundle = JSON.parse(event.data); state("good", "live"); render(); };
+  source.addEventListener("source-error", (event) => state("bad", "source_error", {error: JSON.parse(event.data).error}));
+  source.onerror = () => state("warn", "reconnecting");
 }
-const SOURCE = {option: "실행 옵션", saved: "저장값", default: "기본값", none: "지정 안 됨"};
 async function renderSettings(note) {
   const boxEl = $("settings");
   let current;
   try {
     current = await (await fetch("/api/settings")).json();
-    $("session-name").textContent = current.session ? `세션 ${current.session}` : "";
+    $("session-name").textContent = current.session ? t("session_label", {name: current.session}) : "";
+    if (!chosenLang && current.lang && current.lang !== lang) { setLang(current.lang, false); return; }
   } catch (error) {
-    return boxEl.replaceChildren(el("div", {class: "banner", text: "소스 설정을 읽지 못했다: " + error}));
+    return boxEl.replaceChildren(el("div", {class: "banner", text: t("settings_failed", {error})}));
   }
   const fixed = new Set(current.fixed || []);
   const input = (name, value, disabled, placeholder) => el("input", {name, value: value || "", disabled, placeholder, spellcheck: "false"});
   const form = el("form", {},
-    el("label", {}, "herdr 세션 이름", input("herdr_session", current.herdr_session, fixed.has("herdr_socket"), "예: work")),
-    el("label", {}, "herdr 소켓 경로(선택, 세션 이름보다 우선)", input("herdr_socket", current.herdr_socket_source === "saved" && !current.herdr_session ? current.herdr_socket : "", fixed.has("herdr_socket"), "~/.config/herdr/sessions/<이름>/herdr.sock")),
-    el("label", {}, "Claude Code 데이터 폴더", input("claude_dir", current.claude_dir_source === "saved" ? current.claude_dir : "", fixed.has("claude_dir"), current.claude_dir)),
-    el("label", {}, "herdr web ui 주소(선택 · 넣으면 카드에서 그 에이전트의 pane을 바로 연다)", input("herdr_web_url", current.herdr_web_url, false, "http://127.0.0.1:7317")),
-    el("div", {class: "status", text: `지금 쓰는 herdr 소켓: ${current.herdr_socket || "없음"} · ${current.herdr_socket ? (current.herdr_socket_exists ? "있음" : "없음(세션이 꺼져 있을 수 있다)") : "herdr를 조회하지 않는다"} · ${SOURCE[current.herdr_socket_source]}`}),
-    el("div", {class: "status", text: `Claude 폴더: ${current.claude_dir} · ${SOURCE[current.claude_dir_source]}${fixed.size ? " · 실행 옵션으로 정한 값은 여기서 바꿀 수 없다" : ""}`}),
-    el("div", {class: "status", text: `herdr web ui 링크: ${current.herdr_web_url ? current.herdr_web_url + "/?pane=<pane ID>" : "꺼짐"}`}),
-    el("div", {class: "meta", text: "herdr web ui는 자기를 처음 띄운 herdr 세션 하나에만 붙는다. pane ID(w1:p2 등)는 세션마다 겹치므로, web ui가 위 herdr 세션에 붙어 있을 때만 주소를 넣는다. 다른 세션에 붙어 있으면 같은 ID의 다른 pane이 열린다."}),
+    el("label", {}, t("s_herdr_session"), input("herdr_session", current.herdr_session, fixed.has("herdr_socket"), t("s_herdr_session_placeholder"))),
+    el("label", {}, t("s_herdr_socket"), input("herdr_socket", current.herdr_socket_source === "saved" && !current.herdr_session ? current.herdr_socket : "", fixed.has("herdr_socket"), t("s_herdr_socket_placeholder"))),
+    el("label", {}, t("s_claude_dir"), input("claude_dir", current.claude_dir_source === "saved" ? current.claude_dir : "", fixed.has("claude_dir"), current.claude_dir)),
+    el("label", {}, t("s_web_url"), input("herdr_web_url", current.herdr_web_url, false, "http://127.0.0.1:7317")),
+    el("div", {class: "status", text: t("socket_now", {socket: current.herdr_socket || t("socket_none"),
+      exists: current.herdr_socket ? (current.herdr_socket_exists ? t("socket_exists") : t("socket_missing")) : t("socket_not_queried"),
+      source: t("src_" + current.herdr_socket_source)})}),
+    el("div", {class: "status", text: t("claude_now", {dir: current.claude_dir, source: t("src_" + current.claude_dir_source)}) + (fixed.size ? t("fixed_note") : "")}),
+    el("div", {class: "status", text: t("web_now", {value: current.herdr_web_url ? current.herdr_web_url + "/?pane=<pane ID>" : t("off")})}),
+    el("div", {class: "meta", text: t("web_note")}),
     note ? el("div", {class: note.error ? "banner" : "status", text: note.text}) : null,
-    el("button", {type: "submit", text: "저장"}));
+    el("button", {type: "submit", text: t("save")}));
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const values = {};
     for (const field of form.querySelectorAll("input:not(:disabled)")) values[field.name] = field.value.trim();
     const reply = await fetch("/api/settings", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(values)});
     const body = await reply.json().catch(() => ({}));
-    renderSettings(reply.ok ? {text: "저장했다. 다음 갱신부터 새 설정으로 읽는다."} : {error: true, text: "저장하지 못했다: " + (body.error || reply.status)});
+    renderSettings(reply.ok ? {text: t("saved_note")} : {error: true, text: t("save_failed", {error: body.error || reply.status})});
   });
   const details = el("details", {open: !current.herdr_socket || note ? true : undefined},
-    el("summary", {text: `소스 설정 · herdr ${current.herdr_socket ? (current.session || current.herdr_session || "소켓 지정") : "지정 안 됨"} · web ui 링크 ${current.herdr_web_url ? "켜짐" : "꺼짐"}`}), el("div", {}, form));
+    el("summary", {text: t("settings_summary", {herdr: current.herdr_socket ? (current.session || current.herdr_session || t("socket_given")) : t("src_none"),
+      web: current.herdr_web_url ? t("on") : t("off")})}), el("div", {}, form));
   boxEl.replaceChildren(details);
 }
 
+applyStatic();
+$("lang-toggle").addEventListener("click", () => setLang(lang === "en" ? "ko" : "en", true));
 renderSettings();
 renderLegend();
 setupGraph();

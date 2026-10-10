@@ -232,11 +232,11 @@ class SenderIdentityChecks(BridgeCase):
     def test_unverifiable_claims_are_sent_as_declared_with_the_reason(self):
         self.claim(lineage=lambda: [900, 800])  # e.g. a managed daemon reparented to launchd
         self.assertEqual(self.verification()["method"], "declared")
-        self.assertIn("하위가 아니다", self.verification()["detail"])
+        self.assertIn("not under the process of pane w1:p1", self.verification()["detail"])
         self.temp.cleanup()
         self.setUp()
         self.claim(lineage=lambda: None)
-        self.assertEqual(self.verification(), {"method": "declared", "detail": "세션 ID 변수가 없고 프로세스 계보를 읽지 못했다"})
+        self.assertEqual(self.verification(), {"method": "declared", "detail": "no session ID variable, and the process ancestry could not be read"})
 
     def test_missing_claim_or_session_stops_before_any_herdr_call(self):
         with self.assertRaisesRegex(ValueError, "--from"):

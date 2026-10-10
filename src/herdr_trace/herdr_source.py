@@ -15,8 +15,6 @@ READ_METHODS = {"ping", "agent.list", "agent.get", "session.snapshot"}
 SUBSCRIPTIONS = ("pane.agent_detected", "pane.created", "pane.closed", "pane.exited", "pane.moved")
 PER_PANE = "pane.agent_status_changed"
 PROTOCOL = 22
-STATUS_LABELS = {"idle": "대기", "working": "작업 중", "blocked": "승인·질문 대기", "done": "완료(미확인)",
-                 "unknown": "판정 불가"}
 
 
 class HerdrUnavailable(Exception):
@@ -49,9 +47,9 @@ def request(path, method, params=None, timeout=2.0):
                         raise HerdrUnavailable(f"{error.get('code')}: {error.get('message')}")
                     return reply.get("result") or {}
     except (FileNotFoundError, ConnectionRefusedError) as exc:
-        raise HerdrUnavailable(f"소켓에 연결할 수 없다: {exc.strerror or exc}") from exc
+        raise HerdrUnavailable(f"cannot connect to the socket: {exc.strerror or exc}") from exc
     except (socket.timeout, OSError, ValueError) as exc:
-        raise HerdrUnavailable(f"herdr 응답 오류: {exc}") from exc
+        raise HerdrUnavailable(f"herdr answered with an error: {exc}") from exc
 
 
 class HerdrStatus:
@@ -67,7 +65,7 @@ class HerdrStatus:
         self.socket_path, self.interval, self.idle_interval = socket_path, interval, idle_interval
         self.subscribe, self.backoff_start, self.backoff_limit = subscribe and bool(socket_path), backoff_start, backoff_limit
         self.checked, self.state = 0.0, {"configured": bool(socket_path), "status": "not_configured",
-                                         "detail": "herdr 소켓을 지정하지 않아 조회하지 않는다", "agents": []}
+                                         "detail": "no herdr socket was given, so herdr is not queried", "agents": []}
         self.events = {"state": "off" if self.subscribe else "disabled", "seen": 0, "last_at": None, "last_kind": None,
                        "detail": None, "reconnects": 0}
         self.stale, self.stopping, self.thread = threading.Event(), threading.Event(), None
@@ -88,7 +86,7 @@ class HerdrStatus:
             protocol = pong.get("protocol")
             state.update(status="ok" if protocol == PROTOCOL else "protocol_mismatch", version=pong.get("version"),
                          protocol=protocol, agents=agents,
-                         detail=None if protocol == PROTOCOL else f"protocol {protocol} (기준 {PROTOCOL})")
+                         detail=None if protocol == PROTOCOL else f"protocol {protocol} (expected {PROTOCOL})")
         except HerdrUnavailable as exc:
             state.update(status="unavailable", detail=str(exc), agents=[])
         self.state = state
@@ -153,7 +151,7 @@ class HerdrStatus:
                     if message.get("id") == identity:
                         if "error" in message:
                             error = message["error"] or {}
-                            raise HerdrUnavailable(f"events.subscribe 거부: {error.get('code')}: {error.get('message')}")
+                            raise HerdrUnavailable(f"events.subscribe refused: {error.get('code')}: {error.get('message')}")
                         self.subscribed_panes = panes
                         self.events.update(state="subscribed", detail=None, panes=list(panes))
                         self.stale.set()

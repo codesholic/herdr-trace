@@ -133,12 +133,12 @@ def identify_sender(environ, declared, herdr_bin, session, lineage):
             return sender, {"method": "agent_session_env", "detail": f"{name} matches {provider}:{claimed}"}
     chain = lineage()
     if chain is None:
-        return sender, {"method": "declared", "detail": "세션 ID 변수가 없고 프로세스 계보를 읽지 못했다"}
+        return sender, {"method": "declared", "detail": "no session ID variable, and the process ancestry could not be read"}
     info = call(["pane", "process-info", "--pane", sender["pane_id"]], herdr_bin, session, 30).get("process_info") or {}
     pane_pids = {info.get("shell_pid")} | {p.get("pid") for p in info.get("foreground_processes") or []}
     if pane_pids & set(chain):
-        return sender, {"method": "process_ancestry", "detail": f"pane {sender['pane_id']} 프로세스의 하위에서 실행"}
-    return sender, {"method": "declared", "detail": f"pane {sender['pane_id']} 프로세스의 하위가 아니다(관리형 데몬이면 그럴 수 있다)"}
+        return sender, {"method": "process_ancestry", "detail": f"runs under the process of pane {sender['pane_id']}"}
+    return sender, {"method": "declared", "detail": f"not under the process of pane {sender['pane_id']} (a managed daemon can do this)"}
 
 
 def herdr_fields(info):

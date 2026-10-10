@@ -22,6 +22,8 @@ def main(argv=None):
     serve.add_argument("--claude-dir", type=Path, help="Claude Code data folder (default: ~/.claude), read only")
     serve.add_argument("--codex-dir", type=Path, help="Codex data folder (default: ~/.codex), read only")
     serve.add_argument("--open", action="store_true", help="Open the view in a browser")
+    serve.add_argument("--lang", choices=("en", "ko"), default="en",
+                       help="Language the page starts in; each viewer can switch, and the page remembers it")
 
     send = commands.add_parser("send", help="Send a message to another herdr agent, journaling the exact text first")
     send.add_argument("--to", required=True, help="herdr agent name of the recipient")
@@ -44,6 +46,7 @@ def main(argv=None):
     demo.add_argument("--port", type=int, default=0)
     demo.add_argument("--open", action="store_true", help="Open the view in a browser")
     demo.add_argument("--dir", type=Path, help="Folder for the invented data (default: a temporary folder)")
+    demo.add_argument("--lang", choices=("en", "ko"), default="en", help="Language the page starts in")
 
     args = parser.parse_args(argv)
     try:
@@ -58,7 +61,7 @@ def run_serve(args):
     claude = args.claude_dir or (paths.claude_dir() if os.environ.get("CLAUDE_CONFIG_DIR") else None)
     serve(session=session, state_dir=paths.session_dir(session), journal_path=args.journal or paths.journal_file(session),
           herdr_socket=args.socket or paths.herdr_socket(session), claude_dir=claude,
-          codex_dir=args.codex_dir or paths.codex_dir(), port=args.port, open_browser=args.open)
+          codex_dir=args.codex_dir or paths.codex_dir(), port=args.port, open_browser=args.open, lang=args.lang)
     return 0
 
 
@@ -86,4 +89,4 @@ def run_rules(args):
 
 def run_demo(args):
     from .demo import run
-    return run(port=args.port, open_browser=args.open, directory=args.dir)
+    return run(port=args.port, open_browser=args.open, directory=args.dir, lang=args.lang)

@@ -13,9 +13,8 @@ from datetime import datetime
 
 from .bridge import parse_header
 
-STATUS_LABELS = {"confirmed": "전달 확인", "confirmed_modified": "전달 확인(본문 변형)",
-                 "queued": "대기열 접수(대화 진입 미확인)", "pending_busy": "보냄 · 상대 작업 중(도착 대기 예상)",
-                 "unconfirmed": "보냄(전달 미확인)", "undelivered": "미전달"}
+# Statuses, reasons and normalizations are codes; the page words them in the viewer's language.
+STATUSES = ("confirmed", "confirmed_modified", "queued", "pending_busy", "unconfirmed", "undelivered")
 
 
 def moment(value):
@@ -29,9 +28,9 @@ def variation(sent, received):
     """None when identical; otherwise the first normalization that makes them equal, or a diff summary."""
     if sent == received:
         return None
-    steps = (("줄바꿈 CRLF→LF", lambda s: s.replace("\r\n", "\n")),
-             ("줄 끝 공백 제거", lambda s: "\n".join(line.rstrip() for line in s.replace("\r\n", "\n").split("\n"))),
-             ("앞뒤 공백 제거", lambda s: "\n".join(line.rstrip() for line in s.replace("\r\n", "\n").split("\n")).strip()))
+    steps = (("line_endings", lambda s: s.replace("\r\n", "\n")),
+             ("trailing_spaces", lambda s: "\n".join(line.rstrip() for line in s.replace("\r\n", "\n").split("\n"))),
+             ("outer_whitespace", lambda s: "\n".join(line.rstrip() for line in s.replace("\r\n", "\n").split("\n")).strip()))
     for label, normalize in steps:
         if normalize(sent) == normalize(received):
             return {"equal_after": label, "sent_length": len(sent), "received_length": len(received)}
@@ -64,16 +63,16 @@ def match(events, sessions, late=None):
                 continue
             texts = [t for t in header_texts(prompt) if parse_header(t)]
             if not texts:
-                unattributed.append(evidence(key, session, prompt, reason="머리말 없음(사람 또는 알 수 없는 입력)"))
+                unattributed.append(evidence(key, session, prompt, reason="no_header"))
                 continue
             header = parse_header(texts[0])
             message = by_id.get(header["message_id"])
             if message is None:
-                unattributed.append(evidence(key, session, prompt, reason="저널에 없는 메시지 ID"))
+                unattributed.append(evidence(key, session, prompt, reason="unknown_message"))
             elif message.get("recipient_agent_key") != key and key not in late.get(message["message_id"], ()):
-                unattributed.append(evidence(key, session, prompt, reason="다른 수신자에게 보낸 메시지 ID"))
+                unattributed.append(evidence(key, session, prompt, reason="other_recipient"))
             elif moment(prompt.get("at")) and moment(message.get("at")) and moment(prompt["at"]) < moment(message["at"]):
-                unattributed.append(evidence(key, session, prompt, reason="저널 기록보다 먼저 기록된 입력"))
+                unattributed.append(evidence(key, session, prompt, reason="before_journal"))
             else:
                 found.setdefault(message["message_id"], []).append((prompt, texts[0], session, key))
     deliveries = []
@@ -117,9 +116,7 @@ def match(events, sessions, late=None):
                 item.update(status="pending_busy")
             else:
                 item.update(status="unconfirmed", reason=None if session else
-                            "보낼 때 받는 쪽 세션이 보고되지 않았고, 같은 이름·도구·pane의 세션 기록에서도 찾지 못했다"
-                            if resolved else "수신 세션 기록을 찾지 못했다")
-        item["label"] = STATUS_LABELS[item["status"]]
+                            "late_recipient_not_found" if resolved else "no_recipient_record")
         deliveries.append(item)
     return deliveries, unattributed
 

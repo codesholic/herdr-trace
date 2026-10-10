@@ -19,10 +19,13 @@ PYTHONPATH=src python3 -m herdr_trace demo --open
 
 | Command | What it does |
 | --- | --- |
-| `herdr-trace serve [--session NAME] [--open]` | Serves the view of one herdr session on 127.0.0.1. Prints an address with an access token |
+| `herdr-trace serve [--session NAME] [--open] [--lang en\|ko]` | Serves the view of one herdr session on 127.0.0.1. Prints an address with an access token |
 | `herdr-trace send --to NAME --kind assignment\|message\|result --message-file FILE [--reply-to ID]` | Sends a message to another agent through herdr, journaling the exact text first |
 | `herdr-trace rules [--session NAME]` | Prints the rules to put in an agent's AGENTS.md so it sends through herdr-trace |
 | `herdr-trace demo [--open]` | Serves the view on invented data with a fake herdr socket |
+
+The page is in English or Korean. `--lang` sets the language it starts in; each viewer can switch with the
+button in the top bar, and the page remembers that choice.
 
 ## Privacy
 

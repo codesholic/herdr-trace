@@ -80,7 +80,7 @@ def prepare(directory):
     return built
 
 
-def run(port=0, open_browser=False, directory=None):
+def run(port=0, open_browser=False, directory=None, lang="en"):
     owned = directory is None
     directory = Path(directory) if directory else Path(tempfile.mkdtemp(prefix="herdr-trace-demo-"))
     built = prepare(directory)
@@ -93,7 +93,7 @@ def run(port=0, open_browser=False, directory=None):
     print(f"herdr-trace demo: invented data in {directory}; edit {built['agents_file']} to change agent states", flush=True)
     try:
         serve(session="demo", state_dir=directory / "state", journal_path=built["journal_file"], herdr_socket=path,
-              claude_dir=built["claude_dir"], codex_dir=built["codex_dir"], port=port, open_browser=open_browser)
+              claude_dir=built["claude_dir"], codex_dir=built["codex_dir"], port=port, open_browser=open_browser, lang=lang)
     finally:
         listener.close()
         shutil.rmtree(socket_dir, ignore_errors=True)

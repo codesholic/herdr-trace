@@ -15,27 +15,27 @@ from urllib.parse import quote, urlsplit
 
 from . import claude_source, codex_source, delivery
 from .bridge import agent_key, parse_header
-from .herdr_source import STATUS_LABELS, HerdrStatus
+from .herdr_source import HerdrStatus
 
-KIND_NAMES = {"assignment": "작업 요청", "result": "결과", "message": "메시지"}
 
 
 def headline(text, trusted):
-    """One readable line for a turn's opening input.
+    """A turn's opening input as {"text"}, plus who sent it when a bridge header opens it.
 
     A bridge header names its sender only when the record is a confirmed delivery of a
-    journaled message; anyone can type a header, so an unconfirmed one is labelled as such.
+    journaled message; anyone can type a header, so an unconfirmed one is marked unverified
+    and its sender is left out. The page words the parts in the viewer's language.
     """
     lines = [line.strip() for line in (text or "").splitlines() if line.strip()]
     if not lines:
         return None
     header = parse_header(lines[0])
-    if header:
-        body = next(iter(lines[1:]), "")
-        if trusted:
-            return f"{header['from_agent']} · {KIND_NAMES.get(header['kind'], header['kind'])} · {body}"[:140]
-        return f"확인 안 된 머리말 · {body}"[:140]
-    return lines[0][:140]
+    if not header:
+        return {"text": lines[0][:140]}
+    body = next(iter(lines[1:]), "")[:140]
+    if trusted:
+        return {"text": body, "from": header["from_agent"], "kind": header["kind"]}
+    return {"text": body, "unverified": True}
 
 
 def turn_inputs(session, turn):
@@ -283,7 +283,7 @@ class LabView:
                 sessions[earlier] = self.read(earlier, path)
                 pending.append(earlier)
             except (OSError, ValueError) as exc:
-                errors.append(f"{earlier} 기록을 읽지 못했다: {exc}")
+                errors.append(f"could not read the transcript of {earlier}: {exc}")
         children = {}
         for key, above in parent.items():
             children.setdefault(above, []).append(key)
@@ -301,7 +301,7 @@ class LabView:
             for member in members:
                 cards[member] = current
             card = agents.setdefault(current, {"key": current, "provider": "codex", "session_id": current.split(":", 1)[1],
-                                               "name": None, "live": False, "status": None, "status_label": "상태 미확인"})
+                                               "name": None, "live": False, "status": None})
             card.setdefault("transcript", (sessions.get(current) or {}).get("path"))
             card["name"] = card.get("name") or next((agents[m]["name"] for m in reversed(members) if agents.get(m, {}).get("name")), None)
             card["sessions"] = [{"key": m, "session_id": m.split(":", 1)[1], "forked_from": parent.get(m),
@@ -323,7 +323,7 @@ class LabView:
             if not key:
                 return
             agent = agents.setdefault(key, {"key": key, "provider": key.split(":", 1)[0], "session_id": key.split(":", 1)[1],
-                                            "name": None, "live": False, "status": None, "status_label": "상태 미확인"})
+                                            "name": None, "live": False, "status": None})
             agent["name"] = name or agent["name"]
             if (info or {}).get("pane_id") and (info.get("name") or name):
                 places.setdefault((info.get("name") or name, agent["provider"], info["pane_id"]), set()).add(key)
@@ -332,7 +332,6 @@ class LabView:
                 hints.setdefault(key, []).append(session.get("value"))
             if live:
                 agent.update(live=True, pane_id=info.get("pane_id"), status=info.get("agent_status"),
-                             status_label=STATUS_LABELS.get(info.get("agent_status"), "판정 불가"),
                              web_link=herdr_web_link(self.herdr_web_url, info.get("pane_id")))
 
         for message in messages:
@@ -346,7 +345,7 @@ class LabView:
                 note(key, info.get("name"), info, live=True)
             else:
                 unreported.append({"name": info.get("name"), "pane_id": info.get("pane_id"), "agent": info.get("agent"),
-                                   "status_label": STATUS_LABELS.get(info.get("agent_status"), "판정 불가"),
+                                   "status": info.get("agent_status"),
                                    "web_link": herdr_web_link(self.herdr_web_url, info.get("pane_id"))})
         late = {}  # Sent before the recipient reported its session (a freshly started Codex does so on its first input).
         for message in messages:
@@ -364,7 +363,7 @@ class LabView:
                 sessions[key] = self.read(key, path)
                 agent["title"] = sessions[key].get("title")
             except (OSError, ValueError) as exc:
-                errors.append(f"{key} 기록을 읽지 못했다: {exc}")
+                errors.append(f"could not read the transcript of {key}: {exc}")
         cards = self.lineage(agents, sessions, errors)
         running = claude_source.running_sessions(self.claude_dir)
         for key, agent in agents.items():

@@ -105,7 +105,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/health":
                 return self.reply(200, json.dumps({"status": "ready", "session": self.server.session}).encode())
             if path == "/api/settings":
-                value = {"session": self.server.session, "journal": str(self.server.journal_path), **self.server.settings.effective()}
+                value = {"session": self.server.session, "journal": str(self.server.journal_path), "lang": self.server.lang,
+                         **self.server.settings.effective()}
                 return self.reply(200, json.dumps(value, ensure_ascii=False).encode())
             if path == "/api/bundle":
                 return self.reply(200, json.dumps(self.server.view().build(), ensure_ascii=False).encode())
@@ -177,7 +178,7 @@ def _interrupt(_signum, _frame):
 
 
 def serve(*, session, state_dir, journal_path, herdr_socket, claude_dir, codex_dir, port=0, open_browser=False,
-          out=sys.stdout):
+          lang="en", out=sys.stdout):
     """Serve one herdr session until interrupted. One server per session: a second start is refused."""
     state_dir = Path(state_dir)
     state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -186,12 +187,12 @@ def serve(*, session, state_dir, journal_path, herdr_socket, claude_dir, codex_d
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise ValueError(f"herdr-trace already serves session {session}; see {state_dir / 'server.json'}") from None
-        _serve_locked(session, state_dir, Path(journal_path), herdr_socket, claude_dir, codex_dir, port, open_browser, out)
+        _serve_locked(session, state_dir, Path(journal_path), herdr_socket, claude_dir, codex_dir, port, open_browser, lang, out)
 
 
-def _serve_locked(session, state_dir, journal_path, herdr_socket, claude_dir, codex_dir, port, open_browser, out):
+def _serve_locked(session, state_dir, journal_path, herdr_socket, claude_dir, codex_dir, port, open_browser, lang, out):
     httpd = LoopbackServer(("127.0.0.1", port), Handler)
-    httpd.session, httpd.journal_path, httpd.stop = session, journal_path, threading.Event()
+    httpd.session, httpd.journal_path, httpd.stop, httpd.lang = session, journal_path, threading.Event(), lang
     httpd.token = secrets.token_urlsafe(32)
     httpd.origin = f"http://127.0.0.1:{httpd.server_port}"
     httpd.settings = LabSettings(state_dir, str(claude_dir) if claude_dir else None, str(herdr_socket) if herdr_socket else None)

@@ -93,16 +93,16 @@ class BundleChecks(LabViewCase):
         self.assertEqual([(e.get("sender_verification") or {}).get("method") for e in bundle["edges"]][:5],
                          ["agent_session_env", None, None, None, "declared"])
         self.assertEqual(bundle["herdr"]["status"], "not_configured")
-        self.assertEqual([a["status_label"] for a in bundle["agents"]], ["상태 미확인", "상태 미확인"])
+        self.assertEqual([(a["live"], a["status"]) for a in bundle["agents"]], [(False, None), (False, None)])
 
     def test_cards_summarise_their_latest_turn(self):
         bundle = self.view().build()
         lead, reviewer = bundle["agents"]
         self.assertEqual((lead["turn"]["status"], lead["turn"]["title"], lead["turn"]["count"]),
-                         ("completed", "reviewer · 결과 · 리뷰 결과: 문제 1건.", 2))
+                         ("completed", {"text": "리뷰 결과: 문제 1건.", "from": "reviewer", "kind": "result"}, 2))
         # The reviewer's last turn opens with a typed fake header: it must not read as sent by lead.
         self.assertEqual((reviewer["turn"]["status"], reviewer["turn"]["title"], reviewer["turn"]["inputs"]),
-                         ("open", "확인 안 된 머리말 · 흉내 낸 머리말", 1))
+                         ("open", {"text": "흉내 낸 머리말", "unverified": True}, 1))
         self.assertEqual(reviewer["turn"]["started_at"], lab.at(110))
 
     def test_cards_carry_their_work_periods_for_the_time_order_view(self):
@@ -114,7 +114,8 @@ class BundleChecks(LabViewCase):
         self.assertEqual([(t["start"], t["end"], t["state"]) for t in reviewer["turns"]],
                          [(lab.at(-60), lab.at(-49), "done"), (lab.at(2), lab.at(31), "done"),
                           (lab.at(91), lab.at(100), "done"), (lab.at(110), None, "interrupted")])
-        self.assertEqual(reviewer["turns"][1]["title"], "lead · 작업 요청 · git diff를 리뷰하고 문제만 보고해줘.")
+        self.assertEqual(reviewer["turns"][1]["title"], {"text": "git diff를 리뷰하고 문제만 보고해줘.", "from": "lead",
+                                                          "kind": "assignment"})
 
     def test_revision_is_stable_until_evidence_changes(self):
         view = self.view()
@@ -199,8 +200,8 @@ class BundleChecks(LabViewCase):
         elsewhere = next(e for e in bundle["edges"] if e.get("message_id") == "d0d0d0d0d0d0")
         self.assertEqual((elsewhere["delivery"]["status"], elsewhere["to_key"]), ("unconfirmed", None))
         self.assertEqual(elsewhere["delivery"]["recipient_resolved"]["candidates"], [])
-        self.assertIn("같은 이름·도구·pane", elsewhere["delivery"]["reason"])
-        self.assertIn(("x4", "다른 수신자에게 보낸 메시지 ID"), [(u["record_id"], u["reason"]) for u in bundle["unattributed"]])
+        self.assertEqual(elsewhere["delivery"]["reason"], "late_recipient_not_found")
+        self.assertIn(("x4", "other_recipient"), [(u["record_id"], u["reason"]) for u in bundle["unattributed"]])
 
     def test_reply_ending_a_turn_while_its_background_subagent_still_works_is_an_interim_reply(self):
         records = lab.reviewer_records()
@@ -274,7 +275,7 @@ class BundleChecks(LabViewCase):
         self.assertIsNone(reviewer["transcript"])
         first = bundle["edges"][0]
         self.assertEqual((first["delivery"]["status"], first["delivery"]["reason"]),
-                         ("unconfirmed", "수신 세션 기록을 찾지 못했다"))
+                         ("unconfirmed", "no_recipient_record"))
         self.assertFalse([e for e in bundle["edges"] if e["basis"] == "derived"])
 
 
@@ -288,12 +289,12 @@ class HerdrStatusChecks(LabViewCase):
         view = self.view(fake.path)
         working = view.build()
         self.assertEqual(working["herdr"]["status"], "ok")
-        self.assertEqual([(a["name"], a["live"], a["status_label"]) for a in working["agents"]],
-                         [("lead", True, "대기"), ("reviewer", True, "작업 중")])
+        self.assertEqual([(a["name"], a["live"], a["status"]) for a in working["agents"]],
+                         [("lead", True, "idle"), ("reviewer", True, "working")])
         self.assertEqual([a["name"] for a in working["unreported_agents"]], ["spare"])
         agents[1]["agent_status"] = "idle"
         idle = view.build()
-        self.assertEqual(idle["agents"][1]["status_label"], "대기")
+        self.assertEqual(idle["agents"][1]["status"], "idle")
         self.assertNotEqual(idle["revision"], working["revision"])
         self.assertTrue(set(fake.requests) <= {"ping", "agent.list", "events.subscribe"})
 
@@ -321,7 +322,7 @@ class HerdrStatusChecks(LabViewCase):
     def test_absent_socket_is_unavailable_and_control_methods_are_refused(self):
         bundle = self.view(Path(self.temp.name) / "missing.sock").build()
         self.assertEqual(bundle["herdr"]["status"], "unavailable")
-        self.assertIn("소켓에 연결할 수 없다", bundle["herdr"]["detail"])
+        self.assertIn("cannot connect to the socket", bundle["herdr"]["detail"])
         for method in ("agent.prompt", "agent.send_keys", "server.stop", "pane.send_text"):
             with self.assertRaisesRegex(ValueError, "not read-only"):
                 herdr_source.request(Path(self.temp.name) / "missing.sock", method)

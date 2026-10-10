@@ -108,8 +108,8 @@ class DeliveryMatchChecks(LabCase):
         self.assertEqual(deliveries[6]["receipts"][0]["form"], "queued_command")
         self.assertEqual((deliveries[6]["receipts"][0]["at"], deliveries[6]["receipts"][0]["entered_at"]), (lab.at(95.5), lab.at(97)))
         self.assertEqual(deliveries[6]["latency_seconds"], 2.0)  # Journal +95 to entering the turn at +97, not the queue time.
-        self.assertEqual(deliveries[5]["variation"]["equal_after"], "줄 끝 공백 제거")
-        self.assertEqual(deliveries[2]["label"], "미전달")
+        self.assertEqual(deliveries[5]["variation"]["equal_after"], "trailing_spaces")
+        self.assertNotIn("label", deliveries[2])  # Statuses are codes; the page words them.
 
     def test_busy_recipient_without_a_record_is_pending_and_confirmed_deliveries_carry_latency(self):
         events = copy.deepcopy(self.events)
@@ -118,8 +118,7 @@ class DeliveryMatchChecks(LabCase):
                 event["herdr"] = {"recipient_after": {"agent_status": "working"}}
         deliveries, _ = self.match(events=events)
         pending = next(d for d in deliveries if d["message_id"] == lab.IDS["D"])
-        self.assertEqual((pending["status"], pending["label"], pending["recipient_status_at_send"]),
-                         ("pending_busy", "보냄 · 상대 작업 중(도착 대기 예상)", "working"))
+        self.assertEqual((pending["status"], pending["recipient_status_at_send"]), ("pending_busy", "working"))
         first = deliveries[0]
         self.assertEqual((first["status"], first["latency_seconds"]), ("confirmed", 1.0))
         self.assertNotIn("latency_seconds", pending)
@@ -129,9 +128,9 @@ class DeliveryMatchChecks(LabCase):
     def test_inputs_without_a_journaled_header_are_never_attributed_to_an_agent(self):
         deliveries, unattributed = self.match()
         self.assertEqual({(u["agent_key"], u["record_id"], u["reason"]) for u in unattributed}, {
-            (lab.REVIEWER_KEY, "u0", "머리말 없음(사람 또는 알 수 없는 입력)"),
-            (lab.REVIEWER_KEY, "u3", "저널에 없는 메시지 ID"),
-            (lab.LEAD_KEY, "x1", "머리말 없음(사람 또는 알 수 없는 입력)")})
+            (lab.REVIEWER_KEY, "u0", "no_header"),
+            (lab.REVIEWER_KEY, "u3", "unknown_message"),
+            (lab.LEAD_KEY, "x1", "no_header")})
         receipt_ids = {r["record_id"] for d in deliveries for r in d["receipts"]}
         self.assertFalse(receipt_ids & {"u0", "u3", "x1"})
 
@@ -141,18 +140,18 @@ class DeliveryMatchChecks(LabCase):
         moved[lab.LEAD_KEY]["prompts"].append({**prompt, "blocks": [prompt["text"]]})
         deliveries, unattributed = self.match(sessions=moved)
         self.assertEqual(deliveries[0]["status"], "unconfirmed")
-        self.assertIn((lab.LEAD_KEY, "u1", "다른 수신자에게 보낸 메시지 ID"),
+        self.assertIn((lab.LEAD_KEY, "u1", "other_recipient"),
                       {(u["agent_key"], u["record_id"], u["reason"]) for u in unattributed})
         early = copy.deepcopy(self.sessions)
         early[lab.REVIEWER_KEY]["prompts"][1]["at"] = lab.at(0)
         deliveries, unattributed = self.match(sessions=early)
         self.assertEqual(deliveries[0]["status"], "unconfirmed")
-        self.assertIn("저널 기록보다 먼저 기록된 입력", {u["reason"] for u in unattributed})
+        self.assertIn("before_journal", {u["reason"] for u in unattributed})
 
     def test_missing_recipient_transcript_is_reported_not_guessed(self):
         deliveries, _ = self.match(sessions={lab.LEAD_KEY: self.lead})
         first = deliveries[0]
-        self.assertEqual((first["status"], first["reason"]), ("unconfirmed", "수신 세션 기록을 찾지 못했다"))
+        self.assertEqual((first["status"], first["reason"]), ("unconfirmed", "no_recipient_record"))
 
     def test_claude_system_inputs_start_turns_but_are_not_counted_as_a_persons_input(self):
         path = Path(self.temp.name) / "system.jsonl"
@@ -169,8 +168,8 @@ class DeliveryMatchChecks(LabCase):
 
     def test_body_variation_summary(self):
         self.assertIsNone(delivery.variation("a\nb", "a\nb"))
-        self.assertEqual(delivery.variation("a\nb", "a\r\nb")["equal_after"], "줄바꿈 CRLF→LF")
-        self.assertEqual(delivery.variation("a\nb", "a\nb\n")["equal_after"], "앞뒤 공백 제거")
+        self.assertEqual(delivery.variation("a\nb", "a\r\nb")["equal_after"], "line_endings")
+        self.assertEqual(delivery.variation("a\nb", "a\nb\n")["equal_after"], "outer_whitespace")
         changed = delivery.variation("abc", "abd")
         self.assertEqual((changed["equal_after"], changed["first_difference"]), (None, 2))
 

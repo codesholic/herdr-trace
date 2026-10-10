@@ -138,7 +138,7 @@ class EventSubscriptionChecks(unittest.TestCase):
         self.status.interval = 0
         self.status.current()
         self.assertTrue(until(lambda: self.status.events["state"] == "reconnecting"))
-        self.assertIn("events.subscribe 거부", self.status.events["detail"])
+        self.assertIn("events.subscribe refused", self.status.events["detail"])
         before = self.lists()
         self.status.current()
         self.assertGreater(self.lists(), before)  # Polling continues at the short interval.
