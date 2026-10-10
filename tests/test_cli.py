@@ -37,6 +37,11 @@ class CommandChecks(unittest.TestCase):
         self.assertIn("herdr pane", refused.stderr)
         self.assertFalse(journal.exists())
 
+    def test_checkout_launcher_runs_from_any_folder(self):
+        launched = subprocess.run([str(Path(__file__).resolve().parents[1] / "scripts/herdr-trace"), "--version"],
+                                  env=environment(self.base), capture_output=True, text=True, timeout=30, cwd=self.base)
+        self.assertEqual((launched.returncode, launched.stdout.split()[0]), (0, "herdr-trace"), launched.stderr)
+
     def test_session_names_are_checked_before_any_folder_is_made(self):
         refused = run("rules", "--session", "../x", base=self.base)
         self.assertEqual(refused.returncode, 1)

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Run herdr-trace from this checkout without installing it, for example as the command agents call.
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+PYTHONPATH="$ROOT/src${PYTHONPATH:+:$PYTHONPATH}" exec "${HERDR_TRACE_PYTHON:-python3}" -m herdr_trace "$@"
