@@ -56,7 +56,7 @@
     .legend span{display:inline-flex;align-items:center;gap:6px}.legend svg{width:26px;height:8px}
     .toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--text-2)}
     /* Graph: the canvas language of Codex DAG, where this view comes from (dots, pan, zoom, cards, flowing lines). */
-    .graph-section{position:relative;display:flex;min-width:0;height:min(70vh,640px);background:var(--canvas);overflow:hidden;border-radius:0 0 15px 15px}
+    .graph-section{position:relative;display:flex;min-width:0;height:clamp(440px,calc(100vh - 230px),980px);background:var(--canvas);overflow:hidden;border-radius:0 0 15px 15px}
     .graph{flex:1;min-width:0;position:relative;overflow:hidden;touch-action:none;cursor:grab;
       background-image:radial-gradient(var(--canvas-dot) 1px,transparent 1.3px);background-size:22px 22px}
     .graph.dragging,.graph.dragging *{cursor:grabbing}.graph,.graph *{-webkit-user-select:none;user-select:none}
@@ -470,9 +470,9 @@ function cardCounts(key) {
 }
 
 // ---------- layout ----------
-function perRow() {  // Narrow screens stack cards so the fitted view stays readable.
-  const width = $("graph").clientWidth || 1200;
-  return width < 700 ? 1 : width < 1100 ? 2 : 4;
+function perRow() {  // Narrow or tall graphs stack cards so the fitted view stays readable.
+  const width = $("graph").clientWidth || 1200, height = $("graph").clientHeight || 0;
+  return width < 700 || height > width ? 1 : width < 1100 ? 2 : 4;
 }
 function layout(m) {
   const pos = new Map(), columns = perRow();
