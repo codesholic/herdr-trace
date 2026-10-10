@@ -1,5 +1,7 @@
 # herdr-trace
 
+English | [한국어](README.ko.md)
+
 See what passed between your coding agents in [herdr](https://herdr.dev), and whether it arrived.
 
 > **Status: alpha (0.1.0), the first public version. macOS only for now; Linux comes later.** The plan is in [docs/plan.md](docs/plan.md).
